@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>TEMPORARY_TITLE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" media="screen" href="register.css" />
+    <script type="module" src="register.ts"></script>
+  </head>
+  <body>
+    <main role="main">
+      <header class="page-banner" id="page-banner">
+        <h1>Welcome to the Expiry Date Predictor</h1>
+      </header>
+      <div class="page-block card" id="page-register">
+        <h2>Register</h2>
+        <form id="register-form">
+          <div class="input-group">
+            <lable for="register-email">Email</lable>
+            <input id="register-email" type="email" placeholder="abc@def.com" />
+          </div>
+
+          <div class="input-group">
+            <lable for="register-name">Username</lable>
+            <input id="register-name" type="text" placeholder="Jane Smith" />
+          </div>
+
+          <div class="input-group">
+            <lable for="register-password">Password</lable>
+            <input id="register-password" type="password" />
+          </div>
+
+          <div class="input-group">
+            <lable for="register-passwordConfirmation"
+              >Password Confirmation</lable
+            >
+            <input id="register-passwordConfirmation" type="password" />
+          </div>
+
+          <button type="button" id="register-btn">Register</button>
+          <button type="button" id="login-user-btn">
+            Already have an Account? Login!
+          </button>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>
