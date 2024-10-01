@@ -9,6 +9,9 @@ import RestoreIcon from "@mui/icons-material/Restore";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import History from "./components/History";
+import Prediction from "./components/Prediction";
+import Profile from "./components/Profile";
 
 const PageList = () => {
   const [token, setToken] = React.useState(null);
@@ -51,7 +54,10 @@ const PageList = () => {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Login token={token} setToken={setToken} />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/prediction" element={<Prediction />} />
+        <Route path="/profile" element={<Profile />} />
         <Route
           path="/register"
           element={<Register token={token} setToken={setToken} />}
