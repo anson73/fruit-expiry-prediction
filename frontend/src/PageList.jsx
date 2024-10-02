@@ -53,23 +53,34 @@ const PageList = () => {
 
   return (
     <>
-      <Routes>
-        <Route path="/" element={<Login token={token} setToken={setToken} />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/prediction" element={<Prediction />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route
-          path="/register"
-          element={<Register token={token} setToken={setToken} />}
-        />
-        <Route
-          path="/login"
-          element={<Login token={token} setToken={setToken} />}
-        />
-      </Routes>
       <Box
         style={{
-          height: "15vh",
+          height: "calc(100vh - 118px)",
+          //border: "1px solid red",
+          overflow: "auto",
+        }}
+      >
+        <Routes>
+          <Route
+            path="/"
+            element={<Login token={token} setToken={setToken} />}
+          />
+          <Route path="/history" element={<History />} />
+          <Route path="/prediction" element={<Prediction />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route
+            path="/register"
+            element={<Register token={token} setToken={setToken} />}
+          />
+          <Route
+            path="/login"
+            element={<Login token={token} setToken={setToken} />}
+          />
+        </Routes>
+      </Box>
+      <Box
+        style={{
+          height: "110px",
           // border: '1px solid red',
         }}
       >

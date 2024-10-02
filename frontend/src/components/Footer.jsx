@@ -9,6 +9,7 @@ const Footer = () => {
       gutterBottom
       sx={{
         textAlign: "center",
+        height: "2px",
       }}
     >
       Freshness Prediction Engine - COMP3900H11ADigitalHaven 2023 ©
