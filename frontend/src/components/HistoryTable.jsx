@@ -29,7 +29,9 @@ function createData(
   uploadTime,
   humidity,
   temperature,
-  expiryDate
+  expiryDate,
+  PurchaseDate,
+  ConsumeDate
 ) {
   return {
     seq,
@@ -39,6 +41,8 @@ function createData(
     humidity,
     temperature,
     expiryDate,
+    PurchaseDate,
+    ConsumeDate,
   };
 }
 
@@ -102,10 +106,22 @@ const headCells = [
     label: "Temperature",
   },
   {
+    id: "PurchaseDate",
+    numeric: true,
+    disablePadding: false,
+    label: "PurchaseDate",
+  },
+  {
     id: "expiryDate",
     numeric: true,
     disablePadding: false,
     label: "Expiry Date",
+  },
+  {
+    id: "ConsumeDate",
+    numeric: true,
+    disablePadding: false,
+    label: "ConsumeDate",
   },
   {
     id: "action",
