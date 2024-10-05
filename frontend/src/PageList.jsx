@@ -12,6 +12,7 @@ import Register from "./components/Register";
 import History from "./components/History";
 import Prediction from "./components/Prediction";
 import Profile from "./components/Profile";
+import Landpage from "./components/Landpage";
 
 const PageList = () => {
   const [token, setToken] = React.useState(null);
@@ -61,13 +62,11 @@ const PageList = () => {
         }}
       >
         <Routes>
-          <Route
-            path="/"
-            element={<Login token={token} setToken={setToken} />}
-          />
+          <Route path="/" element={<Landpage />}/>
           <Route path="/history" element={<History />} />
           <Route path="/prediction" element={<Prediction />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/landpage" element={<Landpage />}/>
           <Route
             path="/register"
             element={<Register token={token} setToken={setToken} />}
