@@ -6,7 +6,7 @@ app = Flask(__name__)
 def user_register():
     """
     Route to create a new user
-    return: 
+    return:
     """
 
     user_data = request.json
@@ -20,7 +20,7 @@ def user_register():
 def user_login():
     """
     Route for user login
-    return: 
+    return:
     """
 
     return
@@ -29,7 +29,16 @@ def user_login():
 def user_logout():
     """
     Route for user logout
-    return: 
+    return:
+    """
+
+    return
+
+@app.route('/password', methods=['POST'])
+def user_change_password():
+    """
+    Route to change passwordS
+    return:
     """
 
     return
@@ -38,7 +47,7 @@ def user_logout():
 def add_content():
     """
     Route to add a new photo/video
-    return: 
+    return:
     """
 
     return
@@ -47,7 +56,7 @@ def add_content():
 def get_user_records():
     """
     Route to get all images/videos posted by the user
-    return: 
+    return:
     """
     return
 
@@ -55,10 +64,30 @@ def get_user_records():
 def add_feedback():
     """
     Route to add feedback expiry date
-    return: 
+    return:
     """
 
     return
+
+@app.route('/profile', methods=['GET'])
+def get_profile_picture():
+    """
+    Route to get profile picture
+    return: Profile Picture
+    """
+
+    return
+
+@app.route('/profile', methods=['POST'])
+def add_profile_picture():
+    """
+    Route to add/change profile picture
+    return:
+    """
+
+    return
+
+
 
 if __name__ == '__main__':
     app.run(port=5005)
