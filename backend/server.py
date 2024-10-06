@@ -1,5 +1,5 @@
 from flask import Flask, request
-
+from user import create_user, authenticate_user
 app = Flask(__name__)
 
 @app.route('/register', methods=['POST'])
@@ -14,6 +14,8 @@ def user_register():
     user_password = user_data.get("password")
     user_name = user_data.get("name")
 
+    create_user(user_email, user_password, user_name)
+
     return
 
 @app.route('/login', methods=['POST'])
@@ -22,6 +24,12 @@ def user_login():
     Route for user login
     return: 
     """
+
+    login_input = request.json
+    user_email = login_input.get("email")
+    user_password = login_input.get("password")
+
+    result = authenticate_user(user_email, user_password)
 
     return
 

@@ -17,12 +17,22 @@ def get_new_uid():
 def create_user(email, password, name):
     """
     Add a new user to the database
-    return: None
+    return: True or False
     """
 
+    # Check if email has already been used
+    with open(userdb_filename, mode ='r') as user_db:
+        db_reader = csv.reader(user_db)
+        for user in db_reader:
+            if user[1] == email:
+                return False
+
+    # Add user to database
     with open(userdb_filename, 'a', newline='') as user_db:
         db_writer = csv.writer(user_db)
         db_writer.writerow([get_new_uid(), email, password, name])
+    
+    return True
 
 def get_user_details(user_id):
     """
@@ -35,7 +45,24 @@ def get_user_details(user_id):
         for user in db_reader:
             if user[0] == str(user_id):
                 return user
-            
+
+def authenticate_user(email, password):
+    """
+    Authenticate user for login
+    return: True or False
+    """
+
+    with open(userdb_filename, mode ='r') as user_db:
+        db_reader = csv.reader(user_db)
+        for user in db_reader:
+            if user[1] == email:
+                if user[2] == password: 
+                    return True
+                else:
+                    return False
+    
+    return False
+
 if __name__ == '__main__':
     None
     # Tests: 
