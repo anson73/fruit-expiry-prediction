@@ -13,6 +13,10 @@ def get_temperature(city):
 
     return temperature
 
+def refrigerator_temperature():
+    # Optimum refirgerator temperature is between 0 and 5 celcius
+    return 1
+
 if __name__ == '__main__':
     None
     # Tests: 

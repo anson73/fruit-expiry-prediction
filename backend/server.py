@@ -1,5 +1,7 @@
-from flask import Flask, request
+from flask import Flask, jsonify, request
 from user import create_user, authenticate_user
+from content import process_content
+
 app = Flask(__name__)
 
 @app.route('/register', methods=['POST'])
@@ -46,10 +48,18 @@ def user_logout():
 def add_content():
     """
     Route to add a new photo/video
-    return: 
+    return: Prediction Date
     """
 
-    return
+    content_data = request.json
+    file = content_data.get("file")
+    fruit_type = content_data.get("fruittype")
+    location = content_data.get("location")
+    refrigeration = content_data.get("refrigeration")
+    purchase_date = content_data.get("purchasedate")
+
+    expiry_date = process_content(file, fruit_type, location, refrigeration, purchase_date)
+    return jsonify({"prediction":expiry_date})
 
 @app.route('/history', methods=['GET'])
 def get_user_records():

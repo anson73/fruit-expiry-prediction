@@ -4,6 +4,8 @@ id_filename = "backend/databases/user_id.txt" # File contains new unique user id
 userdb_filename = "backend/databases/userdatabase.csv"
 # Database format: [user_id, email, password, name]
 
+current_user = None
+
 def get_new_uid():
     """
     Get a new unique id for a user
@@ -57,11 +59,19 @@ def authenticate_user(email, password):
         for user in db_reader:
             if user[1] == email:
                 if user[2] == password: 
+                    set_current_user(int(user[0]))
                     return True
                 else:
                     return False
     
     return False
+
+def set_current_user(user_id):
+    global current_user 
+    current_user = user_id
+
+def get_current_user():
+    return current_user
 
 if __name__ == '__main__':
     None
