@@ -28,28 +28,31 @@ const PageList = () => {
   }, []);
 
   const logout = async () => {
-    const response = await fetch("http://localhost:5005/user/auth/logout", {
-      method: "POST",
-      body: JSON.stringify({}),
-      headers: {
-        "Content-type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await response.json();
-    if (data.error) {
-      alert(data.error);
-    } else {
-      setToken(null);
-      localStorage.removeItem("token");
-      localStorage.removeItem("email");
-      navigate("/listings");
-      // console.log('logged out');
-    }
+    //const response = await fetch("http://localhost:5005/user/auth/logout", {
+    //  method: "POST",
+    //  body: JSON.stringify({}),
+    //  headers: {
+    //    "Content-type": "application/json",
+    //    Authorization: `Bearer ${token}`,
+    //  },
+    //});
+    //const data = await response.json();
+    //if (data.error) {
+    //  alert(data.error);
+    //} else {
+    //  setToken(null);
+    //  localStorage.removeItem("token");
+    //  localStorage.removeItem("email");
+    //  navigate("/listings");
+    //  // console.log('logged out');
+    //}
+    setToken(null);
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
   const pages = token
-    ? ["Prediction", "History", "Logout"]
+    ? ["Prediction", "History", "Profile", "Logout"]
     : ["Register", "Login"];
 
   return (
@@ -62,11 +65,11 @@ const PageList = () => {
         }}
       >
         <Routes>
-          <Route path="/" element={<Landpage />}/>
+          <Route path="/" element={<Landpage />} />
           <Route path="/history" element={<History />} />
           <Route path="/prediction" element={<Prediction />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/landpage" element={<Landpage />}/>
+          <Route path="/landpage" element={<Landpage />} />
           <Route
             path="/register"
             element={<Register token={token} setToken={setToken} />}

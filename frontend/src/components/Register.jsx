@@ -35,32 +35,35 @@ export default function Register(props) {
 
   React.useEffect(() => {
     if (props.token) {
-      navigate("/hostings");
+      navigate("/history");
     }
   }, [props.token]);
 
   const Register = async () => {
-    const response = await fetch("http://localhost:5005/user/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        email,
-        password,
-        name,
-      }),
-      headers: {
-        "Content-type": "application/json",
-      },
-    });
-    const data = await response.json();
-    if (data.error) {
-      alert(data.error);
-    } else if (data.token) {
-      console.log(data);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("email", email);
-      props.setToken(data.token);
-      navigate("/hostings");
-    }
+    //const response = await fetch("http://localhost:5005/user/auth/register", {
+    //  method: "POST",
+    //  body: JSON.stringify({
+    //    email,
+    //    password,
+    //    name,
+    //  }),
+    //  headers: {
+    //    "Content-type": "application/json",
+    //  },
+    //});
+    //const data = await response.json();
+    //if (data.error) {
+    //  alert(data.error);
+    //} else if (data.token) {
+    //  console.log(data);
+    //  localStorage.setItem("token", data.token);
+    //  localStorage.setItem("email", email);
+    //  props.setToken(data.token);
+    //  navigate("/hostings");
+    //}
+    props.setToken("000000");
+    localStorage.setItem("token", "0000000");
+    navigate("/history");
   };
 
   return (
