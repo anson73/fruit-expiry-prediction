@@ -9,6 +9,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initalise the database
 db = SQLAlchemy(app)
 
+
 # Create database model
 class users(db.Model):
     uid = db.Column(db.Integer, primary_key = True)
@@ -40,7 +41,8 @@ class user_image(db.Model):
     def __repr__(self):
         return '<PID %r>' % self.pid
 
-
+with app.app_context():
+    db.create_all()
 
 @app.route('/register', methods=['POST'])
 def user_register():
