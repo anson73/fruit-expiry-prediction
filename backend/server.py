@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -56,10 +56,20 @@ def user_register():
     user_name = user_data.get("name")
     user_id = 0
 
+    email_query = users.query.filter_by(email=user_email).first()
+    if email_query is not None:
+
+        return "Email is already registered", 409
+
+    id_query = users.query.filter_by(uid=user_id).first()
+    if id_query is not None:
+        return "Internal error User ID already exists. Please try again later", 503
+
+
     user = users(uid=user_id, username=user_name, email=user_email, password=user_password, reminder_days=None, pfp_id=None, remarks=None)
     db.session.add(user)
     db.session.commit()
-    return "Account Created", 201
+    return "Account Sucessfully Created", 201
 
 @app.route('/login', methods=['POST'])
 def user_login():
