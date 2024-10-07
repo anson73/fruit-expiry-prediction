@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_login import LoginManager, login_required, login_user, logout_user, current_user, UserMixin
 from user import create_user, authenticate_user, edit_profile, set_current_user
 from content import process_content
 from flask_sqlalchemy import SQLAlchemy
@@ -10,25 +11,28 @@ app = Flask(__name__)
 # Add databse
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# add secret key
+app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
 # Initalise the database
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 
 
 # Create database model (add authentication session token)
-class users(db.Model):
-    uid = db.Column(db.String(100), primary_key = True)
+class users(db.Model, UserMixin):
+    id = db.Column(db.String(100), primary_key = True)
     username = db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
-    reminder_days = db.Column(db.Integer)
+    alert_day = db.Column(db.Integer)
     pfp_id = db.Column(db.Integer)
     remarks = db.Column(db.String(200))
 
     def __repr__(self):
-        return '<UID %r>' % self.uid
+        return '<UID %r>' % self.id
 
 class images(db.Model):
     pid = db.Column(db.Integer, primary_key = True)
+    id = db.Column("id", db.ForeignKey(users.id))
     prediction = db.Column(db.Integer)
     feedback = db.Column(db.Integer)
     upload_date = db.Column(db.DateTime, default=datetime.now(), nullable = False)
@@ -40,15 +44,28 @@ class images(db.Model):
     def __repr__(self):
         return '<PID %r>' % self.pid
 
-class user_image(db.Model):
-    uid = db.Column("uid", db.ForeignKey(users.uid))
-    pid = db.Column("pid", db.ForeignKey(images.pid) ,primary_key = True)
-
-    def __repr__(self):
-        return '<PID %r>' % self.pid
-
+# create the database if it does not exist
+app.app_context().push()
+db.init_app(app)
 with app.app_context():
     db.create_all()
+
+# create an instance of the login manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# Assign Login View
+login_manager = LoginManager()
+# Redirect to the login page if authentication fails
+login_manager.login_view = "login"
+login_manager.init_app(app)
+
+
+# Query user from the database based on id
+@login_manager.user_loader
+def load_user(id):
+    # Query user from database based on id
+    return users.query.get(id)
 
 @app.route('/register', methods=['POST'])
 def user_register():
@@ -63,20 +80,20 @@ def user_register():
     user_password_confirmation = user_data.get("passwordconfirmation")
     user_id = str(uuid.uuid4())
 
-    if user_password is not user_password_confirmation:
+    if user_password != user_password_confirmation:
         return "Passwords do not match", 400
     # Check if the email is already in the database
     email_query = users.query.filter_by(email=user_email).first()
     if email_query is not None:
         return "Email is already registered", 409
-    # Check if the uid is already in the database
-    uid_query = users.query.filter_by(uid=user_id).first()
-    while uid_query is not None:
+    # Check if the id is already in the database
+    id_query = users.query.filter_by(id=user_id).first()
+    while id_query is not None:
         user_id = str(uuid.uuid4())
-        uid_query = users.query.filter_by(uid=user_id).first()
+        id_query = users.query.filter_by(id=user_id).first()
 
 
-    user = users(uid=user_id, username=user_name, email=user_email, password=user_password, reminder_days=None, pfp_id=None, remarks=None)
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, alert_day=None, pfp_id=None, remarks=None)
     db.session.add(user)
     db.session.commit()
     return "Account Sucessfully Created", 201
@@ -94,76 +111,63 @@ def user_login():
 
     login_query = users.query.filter_by(email=user_email,password=user_password).first()
 
+    login_user(login_query, remember=True)
+
     if login_query is not None:
         return str(login_query), 200
 
     return "Email or Password Incorrect", 401
 
-@app.route('/profile', methods=['GET']) # TODO should return remarks and pfp as well
+
+# TODO add profile picture addtion # Assuming email is auto filled and can be changed
+# TODO should return remarks and pfp as well
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
 def view_profile():
     """
     Route for editing user profile
     return:
     """
+    if request.method == 'GET':
+        id = current_user.id
+        user = users.query.get_or_404(id)
+        return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
+    else:
 
-    user_data = request.json
-    uid =  user_data.get("uid")
+        profile_input = request.json
+        id = profile_input.get("id")
+        user_password = profile_input.get("password")
+        new_password = profile_input.get("newpassword")
+        new_password_confirmation = profile_input.get("newpasswordconfirmation")
+        alert_day = profile_input.get("day")
+        remarks = profile_input.get("remarks")
 
-    user = users.query.get_or_404(uid)
+        user = users.query.get_or_404(id)
+
+        if user.password != user_password:
+            return {"old":user.password, "new": user_password}, 401
+
+        if new_password is not None and new_password_confirmation is not None:
+            if new_password != new_password_confirmation:
+                return "new password does not match", 400
+            user.password = new_password
+        if user.remarks != remarks:
+            user.remarks = remarks
+        user.alert_day = alert_day
+        db.session.commit()
+
+        return {"new_password": user.password, "new_remark": user.remarks, "alert_day": user.alert_day},200
 
 
-    return {"email":user.email, "remarks":user.remarks}, 200
-
-
-@app.route('/profile', methods=['POST']) # TODO add profile picture addtion # Assuming email is auto filled and can be changed
-def edit_profile():
-    """
-    Route for editing user profile
-    return:
-    """
-
-    profile_input = request.json
-    uid = profile_input.get("uid")
-    user_password = profile_input.get("password")
-    new_password = profile_input.get("newpassword")
-    new_password_confirmation = profile_input.get("newpasswordconfirmation")
-    reminder_days = profile_input.get("day")
-    remarks = profile_input.get("remarks")
-
-    user = users.query.get_or_404(uid)
-
-    if user.password != user_password:
-        return {"old":user.password, "new": user_password}, 401
-
-    if new_password is not None:
-        if new_password != new_password_confirmation:
-            return "new password does not match", 400
-        user.password = new_password
-    if user.remarks != remarks:
-        user.remarks = remarks
-    user.reminder_days = reminder_days
-    db.session.commit()
-
-    return {"new_password": user.password, "new_remark": user.remarks, "reminder_day": user.reminder_days},200
-
-@app.route('/logout', methods=['POST'])
+@app.route('/logout', methods=['GET','POST'])
 def user_logout():
     """
     Route for user logout
     return:
     """
+    logout_user
+    return "you have been logged out", 200
 
-    return
-
-@app.route('/password', methods=['POST'])
-def user_change_password():
-    """
-    Route to change passwordS
-    return:
-    """
-
-    set_current_user(None)
-    return 200
 
 @app.route('/prediction', methods=['POST'])
 def add_content():
