@@ -49,4 +49,4 @@ if __name__ == '__main__':
     # Tests: 
     # print(get_temperature("london"))
     
-    print(get_humidity("sydney"))
+    print(get_current_date("sydney"))

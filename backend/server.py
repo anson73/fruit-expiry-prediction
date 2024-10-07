@@ -2,7 +2,11 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import uuid
+import shutil
+import os
+from weather import get_temperature, get_humidity, get_current_date
 
+contentdb = "backend/content/" # Folder stores all the image/video files
 current_user = None # Holds the id of the user that is currently logged in. 
 
 app = Flask(__name__)
@@ -34,6 +38,10 @@ class images(db.Model):
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
+    path = db.Column(db.String(100))
+    consumed = db.Column(db.Boolean)
+    uid = db.Column(db.String(100), db.ForeignKey(users.uid))
+
     def __repr__(self):
         return '<PID %r>' % self.pid
 
@@ -188,8 +196,36 @@ def add_content():
     refrigeration = content_data.get("refrigeration")
     purchase_date = content_data.get("purchasedate")
 
-    expiry_date = process_content(file, fruit_type, location, refrigeration, purchase_date)
-    return jsonify({"prediction":expiry_date})
+    # Generate new image id
+    image_id = str(uuid.uuid4())
+    # Check if the uid is already in the database
+    pid_query = images.query.filter_by(pid=image_id).first()
+    while pid_query is not None:
+        image_id = str(uuid.uuid4())
+        pid_query = images.query.filter_by(pid=image_id).first()
+
+    # Save image/video to content folder
+    file_name, file_type = os.path.splitext(file)
+    content_path = contentdb + str(image_id) + file_type
+    shutil.copy(file, content_path)
+
+    # Send content to AI
+    temperature = None
+    if refrigeration: temperature = refrigeration
+    else: temperature = get_temperature(location)
+
+    humidity = get_humidity(location)
+    predicted_expiry = None # Add connection to AI here
+
+    # Add image metadata to database
+    image = images(pid=image_id, prediction=predicted_expiry, feedback=None, 
+                   upload_date=get_current_date(location), fruit=fruit_type, 
+                   temperature=temperature, humidity=humidity, path=content_path, 
+                   consumed=False, uid=current_user)
+    db.session.add(image)
+    db.session.commit()
+
+    return jsonify({"prediction":predicted_expiry})
 
 @app.route('/history', methods=['GET'])
 def get_user_records():
@@ -198,9 +234,21 @@ def get_user_records():
     return:
     """
 
-    # View: content -> get_image
-    # Consume/Unconsume: content -> consume
-    # Delete: content -> delete_content
+    # Get all history
+    history_query = users.query.filter_by(uid=current_user)
+
+    # image_query = images.query.filter_by(pid=pid).first()
+
+    # View button (Return path to image in content folder)
+    # image_path = image_query.path
+
+    # Consume/Unconsume button
+    # image_query.consumed = not image_query.consumed
+    # db.session.commit()
+
+    # Delete button
+    # db.session.delete(image_query)
+    # db.session.commit()
 
     return
 
