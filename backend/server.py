@@ -1,6 +1,7 @@
-from flask import Flask, request, flash
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import uuid
 
 app = Flask(__name__)
 # Add databse
@@ -12,7 +13,7 @@ db = SQLAlchemy(app)
 
 # Create database model
 class users(db.Model):
-    uid = db.Column(db.Integer, primary_key = True)
+    uid = db.Column(db.String(100), primary_key = True)
     username = db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
@@ -54,16 +55,18 @@ def user_register():
     user_email = user_data.get("email")
     user_password = user_data.get("password")
     user_name = user_data.get("name")
-    user_id = 0
+    user_id = str(uuid.uuid4())
 
+    # Check if the email is already in the database
     email_query = users.query.filter_by(email=user_email).first()
     if email_query is not None:
 
         return "Email is already registered", 409
-
-    id_query = users.query.filter_by(uid=user_id).first()
-    if id_query is not None:
-        return "Internal error User ID already exists. Please try again later", 503
+    # Check if the uid is already in the database
+    uid_query = users.query.filter_by(uid=user_id).first()
+    while uid_query is not None:
+        user_id = str(uuid.uuid4())
+        uid_query = users.query.filter_by(uid=user_id).first()
 
 
     user = users(uid=user_id, username=user_name, email=user_email, password=user_password, reminder_days=None, pfp_id=None, remarks=None)
