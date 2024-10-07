@@ -135,7 +135,7 @@ const Prediction = () => {
             fullWidth
             label="PurchaseDate"
             variant="outlined"
-            value={Refrigeration}
+            value={PurchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
             sx={{ marginBottom: 2 }}
           />
