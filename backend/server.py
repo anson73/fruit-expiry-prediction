@@ -1,10 +1,9 @@
 from flask import Flask, jsonify, request
-from user import create_user, authenticate_user, edit_profile, set_current_user
-from content import process_content
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import uuid
 
+current_user = None # Holds the id of the user that is currently logged in. 
 
 app = Flask(__name__)
 # Add databse
@@ -48,11 +47,12 @@ class user_image(db.Model):
 with app.app_context():
     db.create_all()
 
+# USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
 def user_register():
     """
     Route to create a new user
-    return: Success/Error message, Success/Error cod
+    return: Success/Error message, Success/Error code
     """
     user_data = request.json
     user_email = user_data.get("email")
@@ -61,12 +61,15 @@ def user_register():
     user_password_confirmation = user_data.get("passwordconfirmation")
     user_id = str(uuid.uuid4())
 
-    if user_password is not user_password_confirmation:
+    # Check if inputted passwords match
+    if user_password != user_password_confirmation:
         return "Passwords do not match", 400
+    
     # Check if the email is already in the database
     email_query = users.query.filter_by(email=user_email).first()
     if email_query is not None:
         return "Email is already registered", 409
+    
     # Check if the uid is already in the database
     uid_query = users.query.filter_by(uid=user_id).first()
     while uid_query is not None:
@@ -75,6 +78,7 @@ def user_register():
 
 
     user = users(uid=user_id, username=user_name, email=user_email, password=user_password, reminder_days=None, pfp_id=None, remarks=None)
+    set_current_user(user.uid)
     db.session.add(user)
     db.session.commit()
     return "Account Sucessfully Created", 201
@@ -95,6 +99,7 @@ def user_login():
     if login_query is not None:
         return str(login_query), 200
 
+    set_current_user(login_query.uid)
     return "Email or Password Incorrect", 401
 
 
@@ -110,12 +115,23 @@ def edit_profile():
     user_password = profile_input.get("password")
     new_password = profile_input.get("newpassword")
     new_password_confirmation = profile_input.get("newpasswordconfirmation")
-    alert_day = profile_input.get("day")
+    reminder_days = profile_input.get("day")
+    remarks = profile_input.get("remarks")
 
+    # Check if passwords match
+    if new_password != new_password_confirmation:
+        return "Passwords do not match", 400
     
-    if not edit_profile(user_email, user_password, new_password, new_password_confirmation, alert_day):
-        return 401
+    # Authenticate User
+    user_profile = users.query.filter_by(email=user_email,password=user_password).first()
+    if user_profile is None:
+        return "Email or Password Incorrect", 401
 
+    # Update user profile
+    user_profile.password = new_password
+    user_profile.password = reminder_days
+    user_profile.remarks = remarks
+    db.session.commit()
     return 200
 
 
@@ -126,7 +142,8 @@ def user_logout():
     return:
     """
 
-    return
+    set_current_user(None)
+    return 200
 
 @app.route('/password', methods=['POST'])
 def user_change_password():
@@ -138,6 +155,25 @@ def user_change_password():
     set_current_user(None)
     return 200
 
+@app.route('/profile', methods=['GET'])
+def get_profile_picture():
+    """
+    Route to get profile picture
+    return: Profile Picture
+    """
+
+    return
+
+@app.route('/profile', methods=['POST'])
+def add_profile_picture():
+    """
+    Route to add/change profile picture
+    return:
+    """
+
+    return
+
+# IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
 @app.route('/prediction', methods=['POST'])
 def add_content():
     """
@@ -177,24 +213,9 @@ def add_feedback():
 
     return
 
-@app.route('/profile', methods=['GET'])
-def get_profile_picture():
-    """
-    Route to get profile picture
-    return: Profile Picture
-    """
-
-    return
-
-@app.route('/profile', methods=['POST'])
-def add_profile_picture():
-    """
-    Route to add/change profile picture
-    return:
-    """
-
-    return
-
+def set_current_user(user_id):
+    global current_user
+    current_user = user_id
 
 
 if __name__ == '__main__':
