@@ -14,7 +14,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-# Create database model
+# Create database model (add authentication session token)
 class users(db.Model):
     uid = db.Column(db.String(100), primary_key = True)
     username = db.Column(db.String(50), nullable = False)
@@ -32,6 +32,8 @@ class images(db.Model):
     prediction = db.Column(db.Integer)
     feedback = db.Column(db.Integer)
     upload_date = db.Column(db.DateTime, default=datetime.now(), nullable = False)
+    purchase_date = db.Column(db.DateTime)
+    consume_date = db.Column(db.DateTime)
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
@@ -97,27 +99,52 @@ def user_login():
 
     return "Email or Password Incorrect", 401
 
+@app.route('/profile', methods=['GET']) # TODO should return remarks and pfp as well
+def view_profile():
+    """
+    Route for editing user profile
+    return:
+    """
 
-@app.route('/profile', methods=['POST'])
+    user_data = request.json
+    uid =  user_data.get("uid")
+
+    user = users.query.get_or_404(uid)
+
+
+    return {"email":user.email, "remarks":user.remarks}, 200
+
+
+@app.route('/profile', methods=['POST']) # TODO add profile picture addtion # Assuming email is auto filled and can be changed
 def edit_profile():
     """
     Route for editing user profile
-    return: 
+    return:
     """
 
     profile_input = request.json
-    user_email = profile_input.get("email")
+    uid = profile_input.get("uid")
     user_password = profile_input.get("password")
     new_password = profile_input.get("newpassword")
     new_password_confirmation = profile_input.get("newpasswordconfirmation")
-    alert_day = profile_input.get("day")
+    reminder_days = profile_input.get("day")
+    remarks = profile_input.get("remarks")
 
-    
-    if not edit_profile(user_email, user_password, new_password, new_password_confirmation, alert_day):
-        return 401
+    user = users.query.get_or_404(uid)
 
-    return 200
+    if user.password != user_password:
+        return {"old":user.password, "new": user_password}, 401
 
+    if new_password is not None:
+        if new_password != new_password_confirmation:
+            return "new password does not match", 400
+        user.password = new_password
+    if user.remarks != remarks:
+        user.remarks = remarks
+    user.reminder_days = reminder_days
+    db.session.commit()
+
+    return {"new_password": user.password, "new_remark": user.remarks, "reminder_day": user.reminder_days},200
 
 @app.route('/logout', methods=['POST'])
 def user_logout():
@@ -176,25 +203,6 @@ def add_feedback():
     """
 
     return
-
-@app.route('/profile', methods=['GET'])
-def get_profile_picture():
-    """
-    Route to get profile picture
-    return: Profile Picture
-    """
-
-    return
-
-@app.route('/profile', methods=['POST'])
-def add_profile_picture():
-    """
-    Route to add/change profile picture
-    return:
-    """
-
-    return
-
 
 
 if __name__ == '__main__':
