@@ -17,6 +17,7 @@ import Button from "@mui/material/Button";
 const Profile = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [daysNotify, setDaysNotify] = React.useState(3);
   const [newPassword, setNewPassword] = React.useState("");
   const [newPasswordConfirmed, setNewPasswordConfirmed] = React.useState("");
   const navigate = useNavigate();
@@ -26,16 +27,23 @@ const Profile = () => {
     event.preventDefault();
   };
 
+  const Submit = () => {
+    navigate("/history");
+  };
+
+  const Cancel = () => {
+    navigate("/history");
+  };
+
   return (
     <div
       style={{
         //border: "1px solid black",
-        height: "100%",
+        padding: "3rem 0rem",
         //width: "80%",
         //maxWidth: "20rem",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
         flexDirection: "column",
         backgroundColor: "#ffffff",
       }}
@@ -139,13 +147,22 @@ const Profile = () => {
             onChange={(e) => setNewPasswordConfirmed(e.target.value)}
           />
         </FormControl>
+        <TextField
+          id="notificationTime"
+          required
+          label="Notify Days before Expiry"
+          variant="outlined"
+        />
         <textarea
           name="postContent"
           defaultValue="Profile Remarks..."
           rows="10"
         />
-        <Button variant="outlined" id="login">
+        <Button variant="outlined" id="submit" onClick={Submit}>
           Submit
+        </Button>
+        <Button variant="outlined" id="cancel" onClick={Cancel}>
+          Cancel
         </Button>
       </Box>
     </div>

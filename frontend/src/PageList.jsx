@@ -48,7 +48,7 @@ const PageList = () => {
     //}
     setToken(null);
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/landpage");
   };
 
   const pages = token

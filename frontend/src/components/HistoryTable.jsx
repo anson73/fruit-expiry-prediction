@@ -21,6 +21,7 @@ import Switch from "@mui/material/Switch";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
+import Button from "@mui/material/Button";
 
 function createData(
   seq,
@@ -29,9 +30,10 @@ function createData(
   uploadTime,
   humidity,
   temperature,
+  purchaseDate,
   expiryDate,
-  PurchaseDate,
-  ConsumeDate
+  consumed,
+  consumeDate
 ) {
   return {
     seq,
@@ -40,16 +42,110 @@ function createData(
     uploadTime,
     humidity,
     temperature,
+    purchaseDate,
     expiryDate,
-    PurchaseDate,
-    ConsumeDate,
+    consumed,
+    consumeDate,
   };
 }
 
-const rows = [
-  createData(1, 0, "Apple", 3.7, 67, 4.3, "abcd"),
-  createData(2, 1, "Banana", 25.0, 51, 4.9, "edfg"),
-  createData(3, 2, "Egg Plant", 16.0, 24, 6.0, "hijk"),
+let rows = [
+  createData(
+    1,
+    0,
+    "Apple",
+    "2024-09-20",
+    67,
+    27,
+    "2024-09-20",
+    "2024-09-30",
+    false,
+    ""
+  ),
+  createData(
+    2,
+    1,
+    "Banana",
+    "2024-09-20",
+    51,
+    34,
+    "2024-09-20",
+    "2024-09-30",
+    true,
+    "2024-09-25"
+  ),
+  createData(
+    3,
+    2,
+    "Tomato",
+    "2024-09-20",
+    24,
+    22,
+    "2024-09-20",
+    "2024-09-30",
+    false,
+    ""
+  ),
+  createData(
+    4,
+    3,
+    "Apple",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+  createData(
+    5,
+    4,
+    "Banana",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+  createData(
+    6,
+    5,
+    "Pear",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+  createData(
+    7,
+    6,
+    "Mango",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+  createData(
+    8,
+    7,
+    "Grapefruit",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
 ];
 
 function descendingComparator(a, b, orderBy) {
@@ -91,7 +187,7 @@ const headCells = [
     id: "uploadTime",
     numeric: false,
     disablePadding: false,
-    label: "Carbs (g)",
+    label: "Upload Time",
   },
   {
     id: "humidity",
@@ -106,10 +202,10 @@ const headCells = [
     label: "Temperature",
   },
   {
-    id: "PurchaseDate",
+    id: "purchaseDate",
     numeric: true,
     disablePadding: false,
-    label: "PurchaseDate",
+    label: "Purchase Date",
   },
   {
     id: "expiryDate",
@@ -220,16 +316,7 @@ function EnhancedTableToolbar(props) {
         >
           {numSelected} selected
         </Typography>
-      ) : (
-        <Typography
-          sx={{ flex: "1 1 100%" }}
-          variant="h6"
-          id="tableTitle"
-          component="div"
-        >
-          Nutrition
-        </Typography>
-      )}
+      ) : null}
       {numSelected > 0 ? (
         <Tooltip title="Delete">
           <IconButton>
@@ -267,7 +354,7 @@ export default function EnhancedTable() {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelected = rows.map((n) => n.id);
+      const newSelected = rows.map((n) => n.seq);
       setSelected(newSelected);
       return;
     }
@@ -318,6 +405,14 @@ export default function EnhancedTable() {
     [order, orderBy, page, rowsPerPage]
   );
 
+  const viewDetails = () => {};
+
+  const consumeProduct = (event, seq) => {};
+
+  const deleteProduct = (event, seq) => {
+    rows = rows.filter((row) => row.seq !== seq);
+  };
+
   return (
     <Box sx={{ width: "80%" }}>
       <Paper sx={{ width: "100%", mb: 2, justifyContent: "center" }}>
@@ -338,24 +433,23 @@ export default function EnhancedTable() {
             />
             <TableBody>
               {visibleRows.map((row, index) => {
-                const isItemSelected = selected.includes(row.id);
+                const isItemSelected = selected.includes(row.seq);
                 const labelId = `enhanced-table-checkbox-${index}`;
 
                 return (
                   <TableRow
                     hover
-                    onClick={(event) => handleClick(event, row.id)}
-                    role="checkbox"
+                    //role="checkbox"
                     aria-checked={isItemSelected}
                     tabIndex={-1}
-                    key={row.id}
+                    key={row.seq}
                     selected={isItemSelected}
-                    sx={{ cursor: "pointer" }}
                   >
                     <TableCell padding="checkbox">
                       <Checkbox
                         color="primary"
                         checked={isItemSelected}
+                        onClick={(event) => handleClick(event, row.seq)}
                         inputProps={{
                           "aria-labelledby": labelId,
                         }}
@@ -366,13 +460,38 @@ export default function EnhancedTable() {
                       id={labelId}
                       scope="row"
                       padding="none"
+                      align="Left"
                     >
                       {row.seq}
                     </TableCell>
                     <TableCell align="center">{row.imageId}</TableCell>
-                    <TableCell align="center">{row.fruitType}</TableCell>
-                    <TableCell align="center">{row.uploadTime}</TableCell>
-                    <TableCell align="center">{row.protein}</TableCell>
+                    <TableCell align="Left">{row.fruitType}</TableCell>
+                    <TableCell align="Left">{row.uploadTime}</TableCell>
+                    <TableCell align="Left">{row.humidity}</TableCell>
+                    <TableCell align="Left">{row.temperature}</TableCell>
+                    <TableCell align="Left">{row.purchaseDate}</TableCell>
+                    <TableCell align="Left">{row.expiryDate}</TableCell>
+                    <TableCell align="Left">{row.consumeDate}</TableCell>
+                    <TableCell align="Left">
+                      <Button
+                        variant="outlined"
+                        onClick={(event) => viewDetails(event, row.seq)}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={(event) => consumeProduct(event, row.seq)}
+                      >
+                        {row.consumed ? <>Un-consume</> : <>Consume</>}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={(event) => deleteProduct(event, row.seq)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}

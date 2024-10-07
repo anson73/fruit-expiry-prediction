@@ -1,18 +1,24 @@
-import React, { useState } from 'react'
-import {
-  Box,
-  Typography,
-} from '@mui/material'
+import React, { useState } from "react";
+import { Box, Typography } from "@mui/material";
 
 const Landpage = () => {
-  
   return (
-    <Box sx={{ padding: 50 }}>
+    <Box
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+
+        height: "80vh",
+        overflow: "auto",
+      }}
+    >
       <Typography variant="h1" align="center">
-        Welcome page
+        Welcome!
       </Typography>
     </Box>
-  )
-}
+  );
+};
 
-export default Landpage
+export default Landpage;

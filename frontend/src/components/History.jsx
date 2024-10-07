@@ -8,7 +8,7 @@ const History = () => {
     <div
       className="historyPage"
       style={{
-        paddingTop: "5%",
+        paddingTop: "3rem",
         //border: "1px solid red",
         //display: "flex",
         justifyContent: "center",
@@ -27,7 +27,7 @@ const History = () => {
           //justifyContent: "Center",
         }}
       >
-        <h1>Welcome back! This is your freshness prediction history!</h1>
+        <h1>Welcome! This is your freshness prediction history!</h1>
       </Typography>
       <div
         style={{

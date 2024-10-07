@@ -55,6 +55,10 @@ export default function Login(props) {
     navigate("/history");
   };
 
+  const Cancel = () => {
+    navigate("/landpage");
+  };
+
   return (
     <div
       className="registerPage"
@@ -73,7 +77,7 @@ export default function Login(props) {
           "& > :not(style)": {
             m: 1,
             width: "90%",
-            maxWidth: "16rem",
+            maxWidth: "30rem",
           },
         }}
         noValidate
@@ -81,7 +85,7 @@ export default function Login(props) {
         style={{
           padding: "1rem",
           width: "80%",
-          maxWidth: "20rem",
+          maxWidth: "30rem",
           display: "flex",
           alignItems: "center",
           flexDirection: "column",
@@ -125,6 +129,9 @@ export default function Login(props) {
         </FormControl>
         <Button variant="outlined" id="login" onClick={login}>
           Submit
+        </Button>
+        <Button variant="outlined" onClick={Cancel} id="cancelButton">
+          Cancel
         </Button>
       </Box>
     </div>

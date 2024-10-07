@@ -63,7 +63,11 @@ export default function Register(props) {
     //}
     props.setToken("000000");
     localStorage.setItem("token", "0000000");
-    navigate("/history");
+    navigate("/profile");
+  };
+
+  const Cancel = () => {
+    navigate("/landpage");
   };
 
   return (
@@ -84,7 +88,7 @@ export default function Register(props) {
           "& > :not(style)": {
             m: 1,
             width: "90%",
-            maxWidth: "16rem",
+            maxWidth: "30rem",
           },
         }}
         noValidate
@@ -93,7 +97,7 @@ export default function Register(props) {
           justifyContent: "center",
           padding: "1rem",
           width: "80%",
-          maxWidth: "20rem",
+          maxWidth: "30rem",
           display: "flex",
           alignItems: "center",
           flexDirection: "column",
@@ -183,6 +187,9 @@ export default function Register(props) {
           disabled={!(password === passwordConfirmation)}
         >
           Submit
+        </Button>
+        <Button variant="outlined" onClick={Cancel} id="cancelButton">
+          Cancel
         </Button>
       </Box>
     </div>
