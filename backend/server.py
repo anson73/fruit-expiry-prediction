@@ -22,7 +22,7 @@ class users(db.Model):
     remarks = db.Column(db.String(200))
 
     def __repr__(self):
-        return '<ID %r>' % self.id
+        return '<UID %r>' % self.uid
 
 class images(db.Model):
     pid = db.Column(db.Integer, primary_key = True)
@@ -80,8 +80,18 @@ def user_login():
     Route for user login
     return:
     """
+    user_data = request.json
+    user_email = user_data.get("email")
+    user_password = user_data.get("password")
 
-    return
+    login_query = users.query.filter_by(email=user_email,password=user_password).first()
+
+    if login_query is not None:
+        return str(login_query), 200
+
+
+
+    return "Email or Password Incorrect", 401
 
 @app.route('/logout', methods=['POST'])
 def user_logout():
