@@ -1,4 +1,7 @@
 from flask import Flask, jsonify, request
+from flask_login import LoginManager, login_required, login_user, logout_user, current_user, UserMixin
+from user import create_user, authenticate_user, edit_profile, set_current_user
+from content import process_content
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import uuid
@@ -13,28 +16,33 @@ app = Flask(__name__)
 # Add databse
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# add secret key
+app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
 # Initalise the database
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 
 
-# Create database model
-class users(db.Model):
-    uid = db.Column(db.String(100), primary_key = True)
+# Create database model (add authentication session token)
+class users(db.Model, UserMixin):
+    id = db.Column(db.String(100), primary_key = True)
     username = db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
-    reminder_days = db.Column(db.Integer)
+    alert_day = db.Column(db.Integer)
     pfp_id = db.Column(db.Integer)
     remarks = db.Column(db.String(200))
 
     def __repr__(self):
-        return '<UID %r>' % self.uid
+        return '<UID %r>' % self.id
 
 class images(db.Model):
     pid = db.Column(db.Integer, primary_key = True)
+    id = db.Column("id", db.ForeignKey(users.id))
     prediction = db.Column(db.Integer)
     feedback = db.Column(db.Integer)
     upload_date = db.Column(db.DateTime, default=datetime.now(), nullable = False)
+    purchase_date = db.Column(db.DateTime)
+    consume_date = db.Column(db.DateTime)
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
@@ -45,15 +53,28 @@ class images(db.Model):
     def __repr__(self):
         return '<PID %r>' % self.pid
 
-class user_image(db.Model):
-    uid = db.Column("uid", db.ForeignKey(users.uid))
-    pid = db.Column("pid", db.ForeignKey(images.pid) ,primary_key = True)
-
-    def __repr__(self):
-        return '<PID %r>' % self.pid
-
+# create the database if it does not exist
+app.app_context().push()
+db.init_app(app)
 with app.app_context():
     db.create_all()
+
+# create an instance of the login manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# Assign Login View
+login_manager = LoginManager()
+# Redirect to the login page if authentication fails
+login_manager.login_view = "login" #TODO REDIRECT LOGIN PAGE
+login_manager.init_app(app)
+
+
+# Query user from the database based on id
+@login_manager.user_loader
+def load_user(id):
+    # Query user from database based on id
+    return users.query.get(id)
 
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
@@ -69,7 +90,9 @@ def user_register():
     user_password_confirmation = user_data.get("passwordconfirmation")
     user_id = str(uuid.uuid4())
 
+
     # Check if inputted passwords match
+
     if user_password != user_password_confirmation:
         return "Passwords do not match", 400
     
@@ -77,16 +100,16 @@ def user_register():
     email_query = users.query.filter_by(email=user_email).first()
     if email_query is not None:
         return "Email is already registered", 409
-    
-    # Check if the uid is already in the database
-    uid_query = users.query.filter_by(uid=user_id).first()
-    while uid_query is not None:
+
+    # Check if the id is already in the database
+    id_query = users.query.filter_by(id=user_id).first()
+    while id_query is not None:
         user_id = str(uuid.uuid4())
-        uid_query = users.query.filter_by(uid=user_id).first()
+        id_query = users.query.filter_by(id=user_id).first()
 
 
-    user = users(uid=user_id, username=user_name, email=user_email, password=user_password, reminder_days=None, pfp_id=None, remarks=None)
-    set_current_user(user.uid)
+
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, alert_day=None, pfp_id=None, remarks=None)
     db.session.add(user)
     db.session.commit()
     return "Account Sucessfully Created", 201
@@ -104,82 +127,61 @@ def user_login():
 
     login_query = users.query.filter_by(email=user_email,password=user_password).first()
 
+    login_user(login_query, remember=True)
+
     if login_query is not None:
         return str(login_query), 200
-
-    set_current_user(login_query.uid)
+      
     return "Email or Password Incorrect", 401
 
 
-@app.route('/profile', methods=['POST'])
-def edit_profile():
+# TODO add profile picture addtion # Assuming email is auto filled and can be changed
+# TODO should return remarks and pfp as well
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def view_profile():
     """
     Route for editing user profile
-    return: 
+    return:
     """
+    id = current_user.id
+    if request.method == 'GET':
+        user = users.query.get_or_404(id)
+        return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
+    else:
+        profile_input = request.json
+        user_password = profile_input.get("password")
+        new_password = profile_input.get("newpassword")
+        new_password_confirmation = profile_input.get("newpasswordconfirmation")
+        alert_day = profile_input.get("day")
+        remarks = profile_input.get("remarks")
 
-    profile_input = request.json
-    user_email = profile_input.get("email")
-    user_password = profile_input.get("password")
-    new_password = profile_input.get("newpassword")
-    new_password_confirmation = profile_input.get("newpasswordconfirmation")
-    reminder_days = profile_input.get("day")
-    remarks = profile_input.get("remarks")
+        user = users.query.get_or_404(id)
 
-    # Check if passwords match
-    if new_password != new_password_confirmation:
-        return "Passwords do not match", 400
-    
-    # Authenticate User
-    user_profile = users.query.filter_by(email=user_email,password=user_password).first()
-    if user_profile is None:
-        return "Email or Password Incorrect", 401
+        if user.password != user_password:
+            return "Passwords do not match", 401
 
-    # Update user profile
-    user_profile.password = new_password
-    user_profile.password = reminder_days
-    user_profile.remarks = remarks
-    db.session.commit()
-    return 200
+        if new_password is not None and new_password_confirmation is not None:
+            if new_password != new_password_confirmation:
+                return "new password does not match", 400
+            user.password = new_password
+        if user.remarks != remarks:
+            user.remarks = remarks
+        user.alert_day = alert_day
+        db.session.commit()
+
+        return {"new_password": user.password, "new_remark": user.remarks, "alert_day": user.alert_day},200
 
 
-@app.route('/logout', methods=['POST'])
+@app.route('/logout', methods=['GET','POST'])
 def user_logout():
     """
     Route for user logout
     return:
     """
+    logout_user()
+    return "you have been logged out", 200
 
-    set_current_user(None)
-    return 200
-
-@app.route('/password', methods=['POST'])
-def user_change_password():
-    """
-    Route to change passwordS
-    return:
-    """
-
-    set_current_user(None)
-    return 200
-
-@app.route('/profile', methods=['GET'])
-def get_profile_picture():
-    """
-    Route to get profile picture
-    return: Profile Picture
-    """
-
-    return
-
-@app.route('/profile', methods=['POST'])
-def add_profile_picture():
-    """
-    Route to add/change profile picture
-    return:
-    """
-
-    return
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
 @app.route('/prediction', methods=['POST'])
@@ -246,6 +248,7 @@ def get_user_records():
     # image_query.consumed = not image_query.consumed
     # db.session.commit()
 
+
     # Delete button
     # db.session.delete(image_query)
     # db.session.commit()
@@ -264,6 +267,7 @@ def add_feedback():
 def set_current_user(user_id):
     global current_user
     current_user = user_id
+
 
 
 if __name__ == '__main__':
