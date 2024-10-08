@@ -3,4 +3,5 @@ requests
 geopy
 timezonefinder
 pytz
+flask_sqlalchemy
 flask-login
