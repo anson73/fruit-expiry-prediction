@@ -57,7 +57,7 @@ login_manager.init_app(app)
 # Assign Login View
 login_manager = LoginManager()
 # Redirect to the login page if authentication fails
-login_manager.login_view = "login"
+login_manager.login_view = "login" #TODO REDIRECT LOGIN PAGE
 login_manager.init_app(app)
 
 
@@ -128,14 +128,13 @@ def view_profile():
     Route for editing user profile
     return:
     """
+    id = current_user.id
     if request.method == 'GET':
-        id = current_user.id
         user = users.query.get_or_404(id)
         return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
     else:
 
         profile_input = request.json
-        id = profile_input.get("id")
         user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
@@ -165,7 +164,7 @@ def user_logout():
     Route for user logout
     return:
     """
-    logout_user
+    logout_user()
     return "you have been logged out", 200
 
 
