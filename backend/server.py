@@ -48,7 +48,6 @@ class images(db.Model):
     humidity =  db.Column(db.Integer)
     path = db.Column(db.String(100))
     consumed = db.Column(db.Boolean)
-    uid = db.Column(db.String(100), db.ForeignKey(users.uid))
 
     def __repr__(self):
         return '<PID %r>' % self.pid
@@ -174,6 +173,7 @@ def view_profile():
 
 
 @app.route('/logout', methods=['GET','POST'])
+@login_required
 def user_logout():
     """
     Route for user logout
@@ -185,6 +185,7 @@ def user_logout():
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
 @app.route('/prediction', methods=['POST'])
+@login_required
 def add_content():
     """
     Route to add a new photo/video
@@ -217,19 +218,20 @@ def add_content():
     else: temperature = get_temperature(location)
 
     humidity = get_humidity(location)
-    predicted_expiry = None # Add connection to AI here
+    predicted_expiry = None # Add connection to AI here (update database when reply from AI and let the user refresh on front end)
 
     # Add image metadata to database
     image = images(pid=image_id, prediction=predicted_expiry, feedback=None, 
                    upload_date=get_current_date(location), fruit=fruit_type, 
                    temperature=temperature, humidity=humidity, path=content_path, 
-                   consumed=False, uid=current_user)
+                   consumed=False, id=current_user.id)
     db.session.add(image)
     db.session.commit()
 
     return jsonify({"prediction":predicted_expiry})
 
 @app.route('/history', methods=['GET'])
+@login_required
 def get_user_records():
     """
     Route to get all images/videos posted by the user
@@ -237,7 +239,7 @@ def get_user_records():
     """
 
     # Get all history
-    history_query = users.query.filter_by(uid=current_user)
+    history_query = users.query.filter_by(id=current_user)
 
     # image_query = images.query.filter_by(pid=pid).first()
 
@@ -263,10 +265,6 @@ def add_feedback():
     """
 
     return
-
-def set_current_user(user_id):
-    global current_user
-    current_user = user_id
 
 
 
