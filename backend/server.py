@@ -5,7 +5,12 @@ from content import process_content
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import uuid
+import shutil
+import os
+from weather import get_temperature, get_humidity, get_current_date
 
+contentdb = "backend/content/" # Folder stores all the image/video files
+current_user = None # Holds the id of the user that is currently logged in. 
 
 app = Flask(__name__)
 # Add databse
@@ -41,6 +46,10 @@ class images(db.Model):
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
+    path = db.Column(db.String(100))
+    consumed = db.Column(db.Boolean)
+    uid = db.Column(db.String(100), db.ForeignKey(users.uid))
+
     def __repr__(self):
         return '<PID %r>' % self.pid
 
@@ -67,11 +76,12 @@ def load_user(id):
     # Query user from database based on id
     return users.query.get(id)
 
+# USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
 def user_register():
     """
     Route to create a new user
-    return: Success/Error message, Success/Error cod
+    return: Success/Error message, Success/Error code
     """
     user_data = request.json
     user_email = user_data.get("email")
@@ -80,17 +90,23 @@ def user_register():
     user_password_confirmation = user_data.get("passwordconfirmation")
     user_id = str(uuid.uuid4())
 
+
+    # Check if inputted passwords match
+
     if user_password != user_password_confirmation:
         return "Passwords do not match", 400
+    
     # Check if the email is already in the database
     email_query = users.query.filter_by(email=user_email).first()
     if email_query is not None:
         return "Email is already registered", 409
+
     # Check if the id is already in the database
     id_query = users.query.filter_by(id=user_id).first()
     while id_query is not None:
         user_id = str(uuid.uuid4())
         id_query = users.query.filter_by(id=user_id).first()
+
 
 
     user = users(id=user_id, username=user_name, email=user_email, password=user_password, alert_day=None, pfp_id=None, remarks=None)
@@ -115,7 +131,7 @@ def user_login():
 
     if login_query is not None:
         return str(login_query), 200
-
+      
     return "Email or Password Incorrect", 401
 
 
@@ -133,7 +149,6 @@ def view_profile():
         user = users.query.get_or_404(id)
         return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
     else:
-
         profile_input = request.json
         user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
@@ -144,7 +159,7 @@ def view_profile():
         user = users.query.get_or_404(id)
 
         if user.password != user_password:
-            return {"old":user.password, "new": user_password}, 401
+            return "Passwords do not match", 401
 
         if new_password is not None and new_password_confirmation is not None:
             if new_password != new_password_confirmation:
@@ -168,6 +183,7 @@ def user_logout():
     return "you have been logged out", 200
 
 
+# IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
 @app.route('/prediction', methods=['POST'])
 def add_content():
     """
@@ -182,8 +198,36 @@ def add_content():
     refrigeration = content_data.get("refrigeration")
     purchase_date = content_data.get("purchasedate")
 
-    expiry_date = process_content(file, fruit_type, location, refrigeration, purchase_date)
-    return jsonify({"prediction":expiry_date})
+    # Generate new image id
+    image_id = str(uuid.uuid4())
+    # Check if the uid is already in the database
+    pid_query = images.query.filter_by(pid=image_id).first()
+    while pid_query is not None:
+        image_id = str(uuid.uuid4())
+        pid_query = images.query.filter_by(pid=image_id).first()
+
+    # Save image/video to content folder
+    file_name, file_type = os.path.splitext(file)
+    content_path = contentdb + str(image_id) + file_type
+    shutil.copy(file, content_path)
+
+    # Send content to AI
+    temperature = None
+    if refrigeration: temperature = refrigeration
+    else: temperature = get_temperature(location)
+
+    humidity = get_humidity(location)
+    predicted_expiry = None # Add connection to AI here
+
+    # Add image metadata to database
+    image = images(pid=image_id, prediction=predicted_expiry, feedback=None, 
+                   upload_date=get_current_date(location), fruit=fruit_type, 
+                   temperature=temperature, humidity=humidity, path=content_path, 
+                   consumed=False, uid=current_user)
+    db.session.add(image)
+    db.session.commit()
+
+    return jsonify({"prediction":predicted_expiry})
 
 @app.route('/history', methods=['GET'])
 def get_user_records():
@@ -192,9 +236,22 @@ def get_user_records():
     return:
     """
 
-    # View: content -> get_image
-    # Consume/Unconsume: content -> consume
-    # Delete: content -> delete_content
+    # Get all history
+    history_query = users.query.filter_by(uid=current_user)
+
+    # image_query = images.query.filter_by(pid=pid).first()
+
+    # View button (Return path to image in content folder)
+    # image_path = image_query.path
+
+    # Consume/Unconsume button
+    # image_query.consumed = not image_query.consumed
+    # db.session.commit()
+
+
+    # Delete button
+    # db.session.delete(image_query)
+    # db.session.commit()
 
     return
 
@@ -206,6 +263,11 @@ def add_feedback():
     """
 
     return
+
+def set_current_user(user_id):
+    global current_user
+    current_user = user_id
+
 
 
 if __name__ == '__main__':
