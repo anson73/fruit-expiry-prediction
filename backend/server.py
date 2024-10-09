@@ -10,7 +10,6 @@ import os
 from weather import get_temperature, get_humidity, get_current_date
 
 contentdb = "backend/content/" # Folder stores all the image/video files
-current_user = None # Holds the id of the user that is currently logged in. 
 
 app = Flask(__name__)
 # Add databse
