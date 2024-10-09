@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Dict
 from fastapi import FastAPI, UploadFile
 from PIL import Image
 import torch
@@ -7,6 +7,7 @@ from torchvision import models
 import io
 from ultralytics import YOLO
 import torchvision.transforms.functional as TF
+import torch.nn.functional as F
 
 # Initialize FastAPI
 app = FastAPI()
@@ -36,14 +37,14 @@ APPLE_LABELS = {
 DETECTION_LABELS = {
     0: 'Apple',
     1: 'Banana',
-    2: 'Grapes',
+    2: 'Mango',
     3: 'Orange',
     4: 'Strawberry'
 }
 
 DETECTION_CONFIDENCE_THRESHOLD = 0.5
 
-detector = YOLO("../models/fruit_detection.pt")
+detector = YOLO("../models/sprint1_detection_model.pt")
 
 banana_predict = models.resnet50()
 banana_predict.fc = torch.nn.Linear(banana_predict.fc.in_features, len(BANANA_LABELS))
@@ -78,33 +79,27 @@ inceptionv3_transform = v2.Compose([
 ])
 
 
-def predict_banana(image: Image) -> str:
-    img = inceptionv3_transform(image).unsqueeze(0)
-    img = img.to(torch.device('cpu'))
+def predict_shelf_life(
+        image: Image.Image,
+        model: torch.nn.Module,
+        transform,
+        labels: Dict[int, str],
+        device: Optional[str] = 'cpu'
+) -> Tuple[str, float]:
+    img_tensor = transform(image).unsqueeze(0).to(device)
+    model.to(device)
+    model.eval()
 
     with torch.no_grad():
-        output = banana_predict(img)
-    predicted_class = output.argmax().item()
-    return BANANA_LABELS[predicted_class]
+        output = model(img_tensor)
+        probabilities = F.softmax(output, dim=1)
+        top_prob, top_idx = torch.max(probabilities, dim=1)
+        predicted_class = top_idx.item()
+        confidence_score = top_prob.item()
 
+    predicted_label = labels[predicted_class]
 
-def predict_strawberry(image: Image) -> str:
-    img = inceptionv3_transform(image).unsqueeze(0)
-    img = img.to(torch.device('cpu'))
-
-    with torch.no_grad():
-        output = strawberry_predict(img)
-    predicted_class = output.argmax().item()
-    return STRAWBERRY_LABELS[predicted_class]
-
-
-def predict_apple(image: Image) -> str:
-    img = resnet50_transform(image).unsqueeze(0)
-    img = img.to(torch.device('cpu'))
-    with torch.no_grad():
-        output = apple_predict(img)
-    predicted_class = output.argmax().item()
-    return APPLE_LABELS[predicted_class]
+    return predicted_label, confidence_score
 
 
 def crop_image(image: Image, box: Tuple[int, int, int, int]):
@@ -138,17 +133,24 @@ async def predict(file: UploadFile):
     for box, detected_class, confidence in zip(boxes, classes, confidences):
         if confidence > DETECTION_CONFIDENCE_THRESHOLD:
             cropped_images.append((crop_image(image, box), detected_class))
-    prediction = "no fruit detected"
-    fruit_detected = ""
+    prediction = ""
+    fruit_detected = "no fruit detected"
+    conf_score = 0
     for (cropped_image, detected_class) in cropped_images:
         if detected_class == 0:
-            prediction = predict_apple(cropped_image)
+            prediction, conf_score = predict_shelf_life(cropped_image, apple_predict, resnet50_transform, APPLE_LABELS)
             fruit_detected = "apple"
         elif detected_class == 1:
-            prediction = predict_banana(cropped_image)
+            prediction, conf_score = predict_shelf_life(cropped_image, banana_predict, resnet50_transform,
+                                                        BANANA_LABELS)
             fruit_detected = "banana"
+        elif detected_class == 2:
+            fruit_detected = "mango"
+        elif detected_class == 3:
+            fruit_detected = "orange"
         elif detected_class == 4:
-            prediction = predict_strawberry(cropped_image)
+            prediction, conf_score = predict_shelf_life(cropped_image, strawberry_predict, inceptionv3_transform,
+                                                        STRAWBERRY_LABELS)
             fruit_detected = "strawberry"
 
-    return {'prediction': prediction, 'fruit_detected': fruit_detected}
+    return {'prediction': prediction, 'fruit_detected': fruit_detected, 'confidence': conf_score}
