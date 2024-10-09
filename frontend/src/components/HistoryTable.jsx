@@ -23,131 +23,6 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
 import Button from "@mui/material/Button";
 
-function createData(
-  seq,
-  imageId,
-  fruitType,
-  uploadTime,
-  humidity,
-  temperature,
-  purchaseDate,
-  expiryDate,
-  consumed,
-  consumeDate
-) {
-  return {
-    seq,
-    imageId,
-    fruitType,
-    uploadTime,
-    humidity,
-    temperature,
-    purchaseDate,
-    expiryDate,
-    consumed,
-    consumeDate,
-  };
-}
-
-let rows = [
-  createData(
-    1,
-    0,
-    "Apple",
-    "2024-09-20",
-    67,
-    27,
-    "2024-09-20",
-    "2024-09-30",
-    false,
-    ""
-  ),
-  createData(
-    2,
-    1,
-    "Banana",
-    "2024-09-20",
-    51,
-    34,
-    "2024-09-20",
-    "2024-09-30",
-    true,
-    "2024-09-25"
-  ),
-  createData(
-    3,
-    2,
-    "Tomato",
-    "2024-09-20",
-    24,
-    22,
-    "2024-09-20",
-    "2024-09-30",
-    false,
-    ""
-  ),
-  createData(
-    4,
-    3,
-    "Apple",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    5,
-    4,
-    "Banana",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    6,
-    5,
-    "Pear",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    7,
-    6,
-    "Mango",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    8,
-    7,
-    "Grapefruit",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-];
-
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
     return -1;
@@ -345,6 +220,105 @@ export default function EnhancedTable() {
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const initialData = [
+    {
+      seq: 1,
+      imageId: 0,
+      fruitType: "Apple",
+      uploadTime: "2024-09-20",
+      humidity: 67,
+      temperature: 27,
+      purchaseDate: "2024-09-20",
+      expiryDate: "2024-09-30",
+      consumed: false,
+      consumeDate: "",
+    },
+    {
+      seq: 2,
+      imageId: 1,
+      fruitType: "Banana",
+      uploadTime: "2024-09-20",
+      humidity: 51,
+      temperature: 34,
+      purchaseDate: "2024-09-20",
+      expiryDate: "2024-09-30",
+      consumed: true,
+      consumeDate: "2024-09-25",
+    },
+    {
+      seq: 3,
+      imageId: 2,
+      fruitType: "Tomato",
+      uploadTime: "2024-09-20",
+      humidity: 24,
+      temperature: 22,
+      purchaseDate: "2024-09-20",
+      expiryDate: "2024-09-30",
+      consumed: false,
+      consumeDate: "",
+    },
+    {
+      seq: 4,
+      imageId: 3,
+      fruitType: "Apple",
+      uploadTime: "2024-10-20",
+      humidity: 67,
+      temperature: 27,
+      purchaseDate: "2024-10-20",
+      expiryDate: "2024-10-30",
+      consumed: false,
+      consumeDate: "",
+    },
+    {
+      seq: 5,
+      imageId: 4,
+      fruitType: "Banana",
+      uploadTime: "2024-09-20",
+      humidity: 67,
+      temperature: 27,
+      purchaseDate: "2024-09-20",
+      expiryDate: "2024-09-30",
+      consumed: false,
+      consumeDate: "",
+    },
+    {
+      seq: 6,
+      imageId: 5,
+      fruitType: "Mango",
+      uploadTime: "2024-09-20",
+      humidity: 67,
+      temperature: 27,
+      purchaseDate: "2024-09-20",
+      expiryDate: "2024-09-30",
+      consumed: false,
+      consumeDate: "",
+    },
+    {
+      seq: 7,
+      imageId: 6,
+      fruitType: "Pear",
+      uploadTime: "2024-09-20",
+      humidity: 67,
+      temperature: 27,
+      purchaseDate: "2024-09-20",
+      expiryDate: "2024-09-30",
+      consumed: false,
+      consumeDate: "",
+    },
+    {
+      seq: 8,
+      imageId: 7,
+      fruitType: "Grapefruit",
+      uploadTime: "2024-09-20",
+      humidity: 67,
+      temperature: 27,
+      purchaseDate: "2024-09-20",
+      expiryDate: "2024-09-30",
+      consumed: false,
+      consumeDate: "",
+    },
+  ];
+  const [rows, setRows] = React.useState(initialData);
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -409,8 +383,8 @@ export default function EnhancedTable() {
 
   const consumeProduct = (event, seq) => {};
 
-  const deleteProduct = (event, seq) => {
-    rows = rows.filter((row) => row.seq !== seq);
+  const deleteProduct = (seq) => {
+    setRows(rows.filter((row) => row.seq !== seq));
   };
 
   return (
@@ -460,7 +434,7 @@ export default function EnhancedTable() {
                       id={labelId}
                       scope="row"
                       padding="none"
-                      align="Left"
+                      align="center"
                     >
                       {row.seq}
                     </TableCell>
@@ -487,7 +461,7 @@ export default function EnhancedTable() {
                       </Button>
                       <Button
                         variant="outlined"
-                        onClick={(event) => deleteProduct(event, row.seq)}
+                        onClick={(event) => deleteProduct(row.seq)}
                       >
                         Delete
                       </Button>
