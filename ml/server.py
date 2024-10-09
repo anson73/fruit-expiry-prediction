@@ -44,21 +44,21 @@ DETECTION_LABELS = {
 
 DETECTION_CONFIDENCE_THRESHOLD = 0.5
 
-detector = YOLO("../models/sprint1_detection_model.pt")
+detector = YOLO("models/sprint1_detection_model.pt")
 
 banana_predict = models.resnet50()
 banana_predict.fc = torch.nn.Linear(banana_predict.fc.in_features, len(BANANA_LABELS))
-banana_predict.load_state_dict(torch.load("../models/banana_resnet50.pth", map_location=torch.device('cpu')))
+banana_predict.load_state_dict(torch.load("models/banana_resnet50.pth", map_location=torch.device('cpu')))
 banana_predict.eval()
 
 apple_predict = models.resnet50()
 apple_predict.fc = torch.nn.Linear(apple_predict.fc.in_features, len(APPLE_LABELS))
-apple_predict.load_state_dict(torch.load("../models/apple_resnet50.pth", map_location=torch.device('cpu')))
+apple_predict.load_state_dict(torch.load("models/apple_resnet50.pth", map_location=torch.device('cpu')))
 apple_predict.eval()
 
 strawberry_predict = models.inception_v3()
 strawberry_predict.fc = torch.nn.Linear(strawberry_predict.fc.in_features, len(STRAWBERRY_LABELS))
-strawberry_predict.load_state_dict(torch.load("../models/strawberry_Inception.pth"))
+strawberry_predict.load_state_dict(torch.load("models/strawberry_Inception.pth"))
 strawberry_predict.eval()
 
 resnet50_transform = v2.Compose([
