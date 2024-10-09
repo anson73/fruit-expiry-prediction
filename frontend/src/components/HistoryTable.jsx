@@ -354,6 +354,8 @@ export default function EnhancedTable() {
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [rows, setRows] = React.useState(defaultRows);
+  const [originalRows, setOriginalRows] = React.useState(defaultRows);
+  const [hideConsumed, setHideConsumed] = React.useState(false);
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -428,23 +430,49 @@ export default function EnhancedTable() {
       } else if (row.seq === seq && row.consumed === false) {
         row.consumed = true;
         row.consumeDate = getDateNow();
-        modifiedRows.push(row);
         //console.log("consume the product");
       } else {
         modifiedRows.push(row);
       }
     });
+    if (!hideConsumed) {
+      setRows(rows.filter((row) => row.consumed === false));
+      setHideConsumed(true);
+    }
     setRows(modifiedRows);
   };
 
   const deleteProduct = (event, seq) => {
     setRows(rows.filter((row) => row.seq !== seq));
+    setOriginalRows(originalRows.filter((row) => row.seq !== seq));
+  };
+
+  const handleHideConsumed = () => {
+    setOriginalRows(rows);
+    if (!hideConsumed) {
+      setRows(rows.filter((row) => row.consumed === false));
+      setHideConsumed(true);
+    } else {
+      setRows(originalRows);
+      setHideConsumed(false);
+    }
   };
 
   return (
     <Box sx={{ width: "80%" }}>
       <Paper sx={{ width: "100%", mb: 2, justifyContent: "center" }}>
+        <FormControlLabel
+          style={{
+            padding: "1rem",
+            marginLeft: "0rem",
+            background: "#f2f2f2",
+          }}
+          control={<Checkbox />}
+          label="Hide Consumed Products"
+          onChange={(event) => handleHideConsumed()}
+        />
         <EnhancedTableToolbar numSelected={selected.length} />
+
         <TableContainer>
           <Table
             sx={{ minWidth: 750 }}
