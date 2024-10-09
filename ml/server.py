@@ -2,8 +2,8 @@ from typing import List, Tuple, Optional, Dict
 from fastapi import FastAPI, UploadFile
 from PIL import Image
 import torch
-from torchvision.transforms import v2
 from torchvision import models
+from torchvision import transforms
 import io
 from ultralytics import YOLO
 import torchvision.transforms.functional as TF
@@ -61,21 +61,17 @@ strawberry_predict.fc = torch.nn.Linear(strawberry_predict.fc.in_features, len(S
 strawberry_predict.load_state_dict(torch.load("models/strawberry_Inception.pth"))
 strawberry_predict.eval()
 
-resnet50_transform = v2.Compose([
-    v2.Resize((256, 256)),
-    v2.Pad((0, 0, 256, 256)),
-    v2.ToImageTensor(),
-    v2.ConvertImageDtype(),
-    v2.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+resnet50_transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.Pad((0, 0, 256, 256)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
-
-inceptionv3_transform = v2.Compose([
-    v2.Resize((299, 299)),
-    v2.Pad((0, 0, 299, 299)),
-    v2.ToImageTensor(),
-    v2.ConvertImageDtype(),
-    v2.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-
+inceptionv3_transform = transforms.Compose([
+    transforms.Resize((299, 299)),
+    transforms.Pad((0, 0, 299, 299)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
 
