@@ -49,7 +49,7 @@ function createData(
   };
 }
 
-let rows = [
+const defaultRows = [
   createData(
     1,
     0,
@@ -147,6 +147,14 @@ let rows = [
     ""
   ),
 ];
+
+function getDateNow() {
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const year = today.getFullYear();
+  const date = today.getDate();
+  return `${year}-${month}-${date}`;
+}
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -345,6 +353,7 @@ export default function EnhancedTable() {
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const [rows, setRows] = React.useState(defaultRows);
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -402,15 +411,34 @@ export default function EnhancedTable() {
       [...rows]
         .sort(getComparator(order, orderBy))
         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage]
+    [order, orderBy, page, rowsPerPage, rows]
   );
 
   const viewDetails = () => {};
 
-  const consumeProduct = (event, seq) => {};
+  const consumeProduct = (event, seq) => {
+    let modifiedRows = [];
+    rows.forEach((row) => {
+      //console.log(row.seq, seq, row.consumed);
+      if (row.seq === seq && row.consumed === true) {
+        row.consumed = false;
+        row.consumeDate = "";
+        modifiedRows.push(row);
+        //console.log("unconsume the product");
+      } else if (row.seq === seq && row.consumed === false) {
+        row.consumed = true;
+        row.consumeDate = getDateNow();
+        modifiedRows.push(row);
+        //console.log("consume the product");
+      } else {
+        modifiedRows.push(row);
+      }
+    });
+    setRows(modifiedRows);
+  };
 
   const deleteProduct = (event, seq) => {
-    rows = rows.filter((row) => row.seq !== seq);
+    setRows(rows.filter((row) => row.seq !== seq));
   };
 
   return (
@@ -460,19 +488,19 @@ export default function EnhancedTable() {
                       id={labelId}
                       scope="row"
                       padding="none"
-                      align="Left"
+                      align="left"
                     >
                       {row.seq}
                     </TableCell>
                     <TableCell align="center">{row.imageId}</TableCell>
-                    <TableCell align="Left">{row.fruitType}</TableCell>
-                    <TableCell align="Left">{row.uploadTime}</TableCell>
-                    <TableCell align="Left">{row.humidity}</TableCell>
-                    <TableCell align="Left">{row.temperature}</TableCell>
-                    <TableCell align="Left">{row.purchaseDate}</TableCell>
-                    <TableCell align="Left">{row.expiryDate}</TableCell>
-                    <TableCell align="Left">{row.consumeDate}</TableCell>
-                    <TableCell align="Left">
+                    <TableCell align="left">{row.fruitType}</TableCell>
+                    <TableCell align="left">{row.uploadTime}</TableCell>
+                    <TableCell align="left">{row.humidity}</TableCell>
+                    <TableCell align="left">{row.temperature}</TableCell>
+                    <TableCell align="left">{row.purchaseDate}</TableCell>
+                    <TableCell align="left">{row.expiryDate}</TableCell>
+                    <TableCell align="left">{row.consumeDate}</TableCell>
+                    <TableCell align="left">
                       <Button
                         variant="outlined"
                         onClick={(event) => viewDetails(event, row.seq)}
