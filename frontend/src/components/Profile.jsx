@@ -13,6 +13,7 @@ import FormControl from "@mui/material/FormControl";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Button from "@mui/material/Button";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 
 const Profile = () => {
   const [email, setEmail] = React.useState("");
@@ -26,6 +27,14 @@ const Profile = () => {
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
+  const [image, setImage] = React.useState(null)
+  const handleImageUpdate = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setImage(url)
+    }
+  }
 
   const Submit = () => {
     navigate("/history");
@@ -73,9 +82,19 @@ const Profile = () => {
       >
         <Avatar
           alt="Remy Sharp"
-          src="/static/images/avatar/1.jpg"
+          src= {image}
           style={{ width: "15rem", height: "15rem" }}
         />
+        <Button
+            variant="contained"
+            component="label"
+            fullWidth
+            startIcon={<CloudUploadIcon />}
+            sx={{ marginTop: 1 }}>
+            Upload Avatar
+            <input type="file" hidden onChange={handleImageUpdate} />
+          </Button>
+          
         <TextField
           id="email"
           required
