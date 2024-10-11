@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react'
 import {
   Box,
   Grid,
@@ -13,81 +12,69 @@ import {
   Paper,
   TableBody,
   Table,
-} from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+} from '@mui/material'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 // variable ? parta : partb
 const Prediction = () => {
-  const navigate = useNavigate();
   let results = [
     {
-      results: "Good",
-      expire: "12/12/2024",
-      possibilty: "80%",
-      accurate: "Yes",
+      results: 'Good',
+      expire: '12/12/2024',
+      possibilty: '80%',
+      accurate: 'Yes',
     },
     {
-      results: "Bad",
-      expire: "12/12/2024",
-      possibilty: "30%",
-      accurate: "Yes",
+      results: 'Bad',
+      expire: '12/12/2024',
+      possibilty: '30%',
+      accurate: 'Yes',
     },
     {
-      results: "Medium",
-      expire: "12/12/2024",
-      possibilty: "60%",
-      accurate: "Yes",
+      results: 'Medium',
+      expire: '12/12/2024',
+      possibilty: '60%',
+      accurate: 'Yes',
     },
-  ];
+  ]
 
-  const [image, setImage] = useState(null);
-  const [fruitType, setfruitType] = useState();
-  const [location, setlocation] = useState();
-  const [Refrigeration, setrefrigeration] = useState();
-  const [PurchaseDate, setPurchaseDate] = useState();
+  const [image, setImage] = useState(null)
+  const [fruitType, setfruitType] = useState()
+  const [location, setlocation] = useState()
+  const [Refrigeration, setrefrigeration] = useState()
+  const [PurchaseDate, setPurchaseDate] = useState()
   const handleImageUpdate = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files[0]
     if (file) {
-      const url = URL.createObjectURL(file);
-      setImage(url);
+      const url = URL.createObjectURL(file)
+      setImage(url)
     }
-  };
+  }
 
   const handlePredict = () => {
-    console.log(fruitType);
-    console.log(location);
-    console.log(Refrigeration);
-    console.log("Predict");
-  };
+    console.log(fruitType)
+    console.log(location)
+    console.log(Refrigeration)
+    console.log('Predict')
+  }
   return (
-    <Box sx={{ padding: 4, margin: 10 }}>
-      <Typography
-        variant="caption"
-        display="block"
-        gutterBottom
-        sx={{
-          textAlign: "center",
-          //display: "flex",
-          //alignItems: "Center",
-          //justifyContent: "Center",
-        }}
-      >
-        <h1>Welcome! Please log your fresh product grocery.</h1>
+    <Box sx={{ padding: 4, margin: 10}}>
+      <Typography variant="h3" align="center" gutterBottom>
+        Predication
       </Typography>
 
       <Grid container spacing={2} justifyContent="center">
         <Grid item xs={12} md={6}>
           <Box
             sx={{
-              width: "100%",
-              height: 555,
-              display: "flex",
-              border: "2px dashed red",
-              borderRadius: "10px",
-              justifyContent: "center",
-              alignItems: "center",
-              overflow: "hidden",
-            }}
-          >
+              width: '100%',
+              height: 600,
+              display: 'flex',
+              border: '2px dashed red',
+              borderRadius: '10px',
+              justifyContent: 'center',
+              alignItems: 'center',
+              overflow: 'hidden',
+            }}>
             {image ? (
               <img src={image} alt="You have already submiited the file" />
             ) : (
@@ -100,8 +87,7 @@ const Prediction = () => {
             component="label"
             fullWidth
             startIcon={<CloudUploadIcon />}
-            sx={{ marginTop: 1 }}
-          >
+            sx={{ marginTop: 1 }}>
             Upload
             <input type="file" hidden onChange={handleImageUpdate} />
           </Button>
@@ -143,8 +129,7 @@ const Prediction = () => {
             variant="contained"
             color="secondary"
             fullWidth
-            onClick={handlePredict}
-          >
+            onClick={handlePredict}>
             Predict
           </Button>
 
@@ -185,7 +170,7 @@ const Prediction = () => {
         </Button>
       </Box> */}
     </Box>
-  );
-};
+  )
+}
 
-export default Prediction;
+export default Prediction
