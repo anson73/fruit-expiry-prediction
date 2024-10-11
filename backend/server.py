@@ -32,7 +32,7 @@ class users(db.Model, UserMixin):
     remarks = db.Column(db.String(200))
 
     def __repr__(self):
-        return '<UID %r>' % self.id
+        return self.id
 
 class images(db.Model):
     pid = db.Column(db.Integer, primary_key = True)
@@ -64,7 +64,7 @@ login_manager.init_app(app)
 # Assign Login View
 login_manager = LoginManager()
 # Redirect to the login page if authentication fails
-login_manager.login_view = "login" #TODO REDIRECT LOGIN PAGE
+login_manager.login_view = "https://www.google.com.au" #TODO REDIRECT LOGIN PAGE
 login_manager.init_app(app)
 
 
@@ -93,7 +93,7 @@ def user_register():
 
     if user_password != user_password_confirmation:
         return "Passwords do not match", 400
-    
+
     # Check if the email is already in the database
     email_query = users.query.filter_by(email=user_email).first()
     if email_query is not None:
@@ -124,12 +124,13 @@ def user_login():
     user_password = user_data.get("password")
 
     login_query = users.query.filter_by(email=user_email,password=user_password).first()
-
+    if login_query is None:
+            return "Email or Password Incorrect", 401
     login_user(login_query, remember=True)
 
     if login_query is not None:
         return str(login_query), 200
-      
+
     return "Email or Password Incorrect", 401
 
 
@@ -190,7 +191,7 @@ def add_content():
     Route to add a new photo/video
     return: Prediction Date
     """
-
+    """
     content_data = request.json
     file = content_data.get("file")
     fruit_type = content_data.get("fruittype")
@@ -220,14 +221,29 @@ def add_content():
     predicted_expiry = None # Add connection to AI here (update database when reply from AI and let the user refresh on front end)
 
     # Add image metadata to database
-    image = images(pid=image_id, prediction=predicted_expiry, feedback=None, 
-                   upload_date=get_current_date(location), fruit=fruit_type, 
-                   temperature=temperature, humidity=humidity, path=content_path, 
+    image = images(pid=image_id, prediction=predicted_expiry, feedback=None,
+                   upload_date=get_current_date(location), fruit=fruit_type,
+                   temperature=temperature, humidity=humidity, path=content_path,
                    consumed=False, id=current_user.id)
     db.session.add(image)
     db.session.commit()
 
     return jsonify({"prediction":predicted_expiry})
+    """
+
+    image = images(pid = 12,id = current_user.id, prediction = None, feedback = None,
+    upload_date = datetime.now(), purchase_date = None,
+    consume_date = None,
+    fruit = None,
+    temperature = None,
+    humidity =  None,
+    path = None,
+    consumed = None)
+    db.session.add(image)
+    db.session.commit()
+
+    return "created", 200
+
 
 @app.route('/history', methods=['GET'])
 @login_required
@@ -238,7 +254,7 @@ def get_user_records():
     """
 
     # Get all history
-    history_query = users.query.filter_by(id=current_user)
+    history_query = images.query.filter_by(id=current_user.id).all()
 
     # image_query = images.query.filter_by(pid=pid).first()
 
@@ -254,7 +270,9 @@ def get_user_records():
     # db.session.delete(image_query)
     # db.session.commit()
 
-    return
+    if history_query == []:
+        return "No History"
+    return "No History"
 
 @app.route('/history', methods=['POST'])
 def add_feedback():
