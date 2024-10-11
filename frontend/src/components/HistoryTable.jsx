@@ -23,6 +23,139 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
 import Button from "@mui/material/Button";
 
+function createData(
+  seq,
+  imageId,
+  fruitType,
+  uploadTime,
+  humidity,
+  temperature,
+  purchaseDate,
+  expiryDate,
+  consumed,
+  consumeDate
+) {
+  return {
+    seq,
+    imageId,
+    fruitType,
+    uploadTime,
+    humidity,
+    temperature,
+    purchaseDate,
+    expiryDate,
+    consumed,
+    consumeDate,
+  };
+}
+
+const defaultRows = [
+  createData(
+    1,
+    0,
+    "Apple",
+    "2024-09-20",
+    67,
+    27,
+    "2024-09-20",
+    "2024-09-30",
+    false,
+    ""
+  ),
+  createData(
+    2,
+    1,
+    "Banana",
+    "2024-09-20",
+    51,
+    34,
+    "2024-09-20",
+    "2024-09-30",
+    true,
+    "2024-09-25"
+  ),
+  createData(
+    3,
+    2,
+    "Tomato",
+    "2024-09-20",
+    24,
+    22,
+    "2024-09-20",
+    "2024-09-30",
+    false,
+    ""
+  ),
+  createData(
+    4,
+    3,
+    "Apple",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+  createData(
+    5,
+    4,
+    "Banana",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+  createData(
+    6,
+    5,
+    "Pear",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+  createData(
+    7,
+    6,
+    "Mango",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+  createData(
+    8,
+    7,
+    "Grapefruit",
+    "2024-10-20",
+    24,
+    22,
+    "2024-10-20",
+    "2024-10-30",
+    false,
+    ""
+  ),
+];
+
+function getDateNow() {
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const year = today.getFullYear();
+  const date = today.getDate();
+  return `${year}-${month}-${date}`;
+}
+
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
     return -1;
@@ -220,105 +353,9 @@ export default function EnhancedTable() {
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const initialData = [
-    {
-      seq: 1,
-      imageId: 0,
-      fruitType: "Apple",
-      uploadTime: "2024-09-20",
-      humidity: 67,
-      temperature: 27,
-      purchaseDate: "2024-09-20",
-      expiryDate: "2024-09-30",
-      consumed: false,
-      consumeDate: "",
-    },
-    {
-      seq: 2,
-      imageId: 1,
-      fruitType: "Banana",
-      uploadTime: "2024-09-20",
-      humidity: 51,
-      temperature: 34,
-      purchaseDate: "2024-09-20",
-      expiryDate: "2024-09-30",
-      consumed: true,
-      consumeDate: "2024-09-25",
-    },
-    {
-      seq: 3,
-      imageId: 2,
-      fruitType: "Tomato",
-      uploadTime: "2024-09-20",
-      humidity: 24,
-      temperature: 22,
-      purchaseDate: "2024-09-20",
-      expiryDate: "2024-09-30",
-      consumed: false,
-      consumeDate: "",
-    },
-    {
-      seq: 4,
-      imageId: 3,
-      fruitType: "Apple",
-      uploadTime: "2024-10-20",
-      humidity: 67,
-      temperature: 27,
-      purchaseDate: "2024-10-20",
-      expiryDate: "2024-10-30",
-      consumed: false,
-      consumeDate: "",
-    },
-    {
-      seq: 5,
-      imageId: 4,
-      fruitType: "Banana",
-      uploadTime: "2024-09-20",
-      humidity: 67,
-      temperature: 27,
-      purchaseDate: "2024-09-20",
-      expiryDate: "2024-09-30",
-      consumed: false,
-      consumeDate: "",
-    },
-    {
-      seq: 6,
-      imageId: 5,
-      fruitType: "Mango",
-      uploadTime: "2024-09-20",
-      humidity: 67,
-      temperature: 27,
-      purchaseDate: "2024-09-20",
-      expiryDate: "2024-09-30",
-      consumed: false,
-      consumeDate: "",
-    },
-    {
-      seq: 7,
-      imageId: 6,
-      fruitType: "Pear",
-      uploadTime: "2024-09-20",
-      humidity: 67,
-      temperature: 27,
-      purchaseDate: "2024-09-20",
-      expiryDate: "2024-09-30",
-      consumed: false,
-      consumeDate: "",
-    },
-    {
-      seq: 8,
-      imageId: 7,
-      fruitType: "Grapefruit",
-      uploadTime: "2024-09-20",
-      humidity: 67,
-      temperature: 27,
-      purchaseDate: "2024-09-20",
-      expiryDate: "2024-09-30",
-      consumed: false,
-      consumeDate: "",
-    },
-  ];
-  const [rows, setRows] = React.useState(initialData);
+  const [rows, setRows] = React.useState(defaultRows);
+  const [originalRows, setOriginalRows] = React.useState(defaultRows);
+  const [hideConsumed, setHideConsumed] = React.useState(false);
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -376,21 +413,66 @@ export default function EnhancedTable() {
       [...rows]
         .sort(getComparator(order, orderBy))
         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage]
+    [order, orderBy, page, rowsPerPage, rows]
   );
 
   const viewDetails = () => {};
 
-  const consumeProduct = (event, seq) => {};
+  const consumeProduct = (event, seq) => {
+    let modifiedRows = [];
+    rows.forEach((row) => {
+      //console.log(row.seq, seq, row.consumed);
+      if (row.seq === seq && row.consumed === true) {
+        row.consumed = false;
+        row.consumeDate = "";
+        modifiedRows.push(row);
+        //console.log("unconsume the product");
+      } else if (row.seq === seq && row.consumed === false) {
+        row.consumed = true;
+        row.consumeDate = getDateNow();
+        //console.log("consume the product");
+      } else {
+        modifiedRows.push(row);
+      }
+    });
+    if (!hideConsumed) {
+      setRows(rows.filter((row) => row.consumed === false));
+      setHideConsumed(true);
+    }
+    setRows(modifiedRows);
+  };
 
-  const deleteProduct = (seq) => {
+  const deleteProduct = (event, seq) => {
     setRows(rows.filter((row) => row.seq !== seq));
+    setOriginalRows(originalRows.filter((row) => row.seq !== seq));
+  };
+
+  const handleHideConsumed = () => {
+    setOriginalRows(rows);
+    if (!hideConsumed) {
+      setRows(rows.filter((row) => row.consumed === false));
+      setHideConsumed(true);
+    } else {
+      setRows(originalRows);
+      setHideConsumed(false);
+    }
   };
 
   return (
     <Box sx={{ width: "80%" }}>
       <Paper sx={{ width: "100%", mb: 2, justifyContent: "center" }}>
+        <FormControlLabel
+          style={{
+            padding: "1rem",
+            marginLeft: "0rem",
+            background: "#f2f2f2",
+          }}
+          control={<Checkbox />}
+          label="Hide Consumed Products"
+          onChange={(event) => handleHideConsumed()}
+        />
         <EnhancedTableToolbar numSelected={selected.length} />
+
         <TableContainer>
           <Table
             sx={{ minWidth: 750 }}
@@ -434,19 +516,19 @@ export default function EnhancedTable() {
                       id={labelId}
                       scope="row"
                       padding="none"
-                      align="center"
+                      align="left"
                     >
                       {row.seq}
                     </TableCell>
                     <TableCell align="center">{row.imageId}</TableCell>
-                    <TableCell align="Left">{row.fruitType}</TableCell>
-                    <TableCell align="Left">{row.uploadTime}</TableCell>
-                    <TableCell align="Left">{row.humidity}</TableCell>
-                    <TableCell align="Left">{row.temperature}</TableCell>
-                    <TableCell align="Left">{row.purchaseDate}</TableCell>
-                    <TableCell align="Left">{row.expiryDate}</TableCell>
-                    <TableCell align="Left">{row.consumeDate}</TableCell>
-                    <TableCell align="Left">
+                    <TableCell align="left">{row.fruitType}</TableCell>
+                    <TableCell align="left">{row.uploadTime}</TableCell>
+                    <TableCell align="left">{row.humidity}</TableCell>
+                    <TableCell align="left">{row.temperature}</TableCell>
+                    <TableCell align="left">{row.purchaseDate}</TableCell>
+                    <TableCell align="left">{row.expiryDate}</TableCell>
+                    <TableCell align="left">{row.consumeDate}</TableCell>
+                    <TableCell align="left">
                       <Button
                         variant="outlined"
                         onClick={(event) => viewDetails(event, row.seq)}
