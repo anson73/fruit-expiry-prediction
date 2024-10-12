@@ -4,5 +4,6 @@ geopy
 timezonefinder
 pytz
 flask_sqlalchemy
-flask-login
+flask_cors
+flask_praetorian
 
