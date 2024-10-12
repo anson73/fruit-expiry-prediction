@@ -1,8 +1,9 @@
 from flask import Flask, jsonify, request
-from flask_login import LoginManager, login_required, login_user, logout_user, current_user, UserMixin
 from user import create_user, authenticate_user, edit_profile, set_current_user
 from content import process_content
 from flask_sqlalchemy import SQLAlchemy
+from flask_praetorian import Praetorian, auth_required, current_user_id
+from flask_cors import CORS
 from datetime import datetime
 import uuid
 import shutil
@@ -17,12 +18,18 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # add secret key
 app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
-# Initalise the database
+app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 24}
+app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
+app.config['PRAETORIAN_ROLES_DISABLED'] = True
+app.config['DEFAULT_ROLES_DISABLED'] = True
+# Initalise the database, JWT token libray and CORS
 db = SQLAlchemy()
+guard = Praetorian()
+cors = CORS()
 
 
 # Create database model (add authentication session token)
-class users(db.Model, UserMixin):
+class users(db.Model):
     id = db.Column(db.String(100), primary_key = True)
     username = db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(120), nullable = False, unique = True)
@@ -31,8 +38,22 @@ class users(db.Model, UserMixin):
     pfp_id = db.Column(db.Integer)
     remarks = db.Column(db.String(200))
 
-    def __repr__(self):
+    @classmethod
+    def lookup(cls, username):
+        return cls.query.filter_by(username=username).one_or_none()
+
+    @classmethod
+    def identify(cls, id):
+        return cls.query.get(id)
+
+    @property
+    def identity(self):
         return self.id
+    
+    @property # the library needs rolenames even when disabled in the config
+    def rolenames(self):
+        return []
+
 
 class images(db.Model):
     pid = db.Column(db.Integer, primary_key = True)
@@ -56,23 +77,10 @@ app.app_context().push()
 db.init_app(app)
 with app.app_context():
     db.create_all()
-
-# create an instance of the login manager
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-# Assign Login View
-login_manager = LoginManager()
-# Redirect to the login page if authentication fails
-login_manager.login_view = "https://www.google.com.au" #TODO REDIRECT LOGIN PAGE
-login_manager.init_app(app)
-
-
-# Query user from the database based on id
-@login_manager.user_loader
-def load_user(id):
-    # Query user from database based on id
-    return users.query.get(id)
+# Initialize the flask-praetorian instance for the app
+guard.init_app(app, users)
+# Initializes CORS so that the api_tool can talk to the example app
+cors.init_app(app)
 
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
@@ -123,27 +131,23 @@ def user_login():
     user_email = user_data.get("email")
     user_password = user_data.get("password")
 
-    login_query = users.query.filter_by(email=user_email,password=user_password).first()
-    if login_query is None:
-            return "Email or Password Incorrect", 401
-    login_user(login_query, remember=True)
-
-    if login_query is not None:
-        return str(login_query), 200
-
+    user = users.query.filter_by(email=user_email,password=user_password).first()
+    if user is not None:
+        ret = {'access_token': guard.encode_jwt_token(user)}
+        return jsonify(ret), 200
     return "Email or Password Incorrect", 401
 
 
 # TODO add profile picture addtion # Assuming email is auto filled and can be changed
 # TODO should return remarks and pfp as well
 @app.route('/profile', methods=['GET', 'POST'])
-@login_required
+@auth_required
 def view_profile():
     """
     Route for editing user profile
     return:
     """
-    id = current_user.id
+    id = current_user_id()
     if request.method == 'GET':
         user = users.query.get_or_404(id)
         return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
@@ -173,19 +177,18 @@ def view_profile():
 
 
 @app.route('/logout', methods=['GET','POST'])
-@login_required
+
 def user_logout():
     """
     Route for user logout
     return:
     """
-    logout_user()
     return "you have been logged out", 200
 
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
 @app.route('/prediction', methods=['POST'])
-@login_required
+
 def add_content():
     """
     Route to add a new photo/video
@@ -229,8 +232,8 @@ def add_content():
     db.session.commit()
 
     return jsonify({"prediction":predicted_expiry})
-    """
-
+    
+#----------------------------------------------------------------------------
     image = images(pid = 12,id = current_user.id, prediction = None, feedback = None,
     upload_date = datetime.now(), purchase_date = None,
     consume_date = None,
@@ -241,12 +244,12 @@ def add_content():
     consumed = None)
     db.session.add(image)
     db.session.commit()
-
+"""
     return "created", 200
 
 
 @app.route('/history', methods=['GET'])
-@login_required
+
 def get_user_records():
     """
     Route to get all images/videos posted by the user
@@ -254,7 +257,6 @@ def get_user_records():
     """
 
     # Get all history
-    history_query = images.query.filter_by(id=current_user.id).all()
 
     # image_query = images.query.filter_by(pid=pid).first()
 
@@ -270,9 +272,6 @@ def get_user_records():
     # db.session.delete(image_query)
     # db.session.commit()
 
-    if history_query == []:
-        return "No History"
-    return "No History"
 
 @app.route('/history', methods=['POST'])
 def add_feedback():
