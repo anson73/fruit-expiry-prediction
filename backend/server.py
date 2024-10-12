@@ -64,7 +64,7 @@ login_manager.init_app(app)
 # Assign Login View
 login_manager = LoginManager()
 # Redirect to the login page if authentication fails
-login_manager.login_view = "https://www.google.com.au" #TODO REDIRECT LOGIN PAGE
+login_manager.login_view = "http://localhost:3000/login" #TODO REDIRECT LOGIN PAGE
 login_manager.init_app(app)
 
 
