@@ -72,6 +72,16 @@ class images(db.Model):
     def __repr__(self):
         return '<PID %r>' % self.pid
 
+class token_blacklist(db.Model):
+    token = db.Column(db.String(400), primary_key = True)
+    expiry_date = db.Column(db.DateTime, nullable = False)
+
+    def __repr__(self):
+        return '<Token %r>' % self.token
+
+    
+    
+
 # create the database if it does not exist
 app.app_context().push()
 db.init_app(app)
@@ -81,6 +91,12 @@ with app.app_context():
 guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
+
+def isTokenInBlacklist(token):
+    dbToken = token_blacklist.query.get(token)
+    if dbToken is None:
+        return False
+    return True
 
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
@@ -118,7 +134,8 @@ def user_register():
     user = users(id=user_id, username=user_name, email=user_email, password=user_password, alert_day=None, pfp_id=None, remarks=None)
     db.session.add(user)
     db.session.commit()
-    return "Account Sucessfully Created", 201
+    ret = {'access_token': guard.encode_jwt_token(user)}
+    return jsonify(ret), 201
 
 
 @app.route('/login', methods=['POST'])
@@ -147,6 +164,9 @@ def view_profile():
     Route for editing user profile
     return:
     """
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+    
     id = current_user_id()
     if request.method == 'GET':
         user = users.query.get_or_404(id)
@@ -183,7 +203,11 @@ def user_logout():
     Route for user logout
     return:
     """
-    return "you have been logged out", 200
+    BlackToken = token_blacklist(token=guard.read_token_from_header(),expiry_date=datetime.fromtimestamp(guard.extract_jwt_token(guard.read_token_from_header())['exp']))
+    db.session.add(BlackToken)
+    db.session.commit()
+
+    return "You have been logged out", 200
 
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
