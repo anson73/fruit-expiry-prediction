@@ -5,7 +5,7 @@ from sqlalchemy import text, desc
 from flask_sqlalchemy import SQLAlchemy
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import shutil
 import os
@@ -248,7 +248,7 @@ def add_content():
                    fruit="Bananna", temperature="6", humidity="30", path="backend/content", consumed=False)
     db.session.add(image)
     db.session.commit()
-    
+
     """
     Route to add a new photo/video
     return: Prediction Date
@@ -314,6 +314,60 @@ def get_user_records():
     Route to get all images/videos posted by the user
     return:
     """
+    # Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
+    query = request.args.to_dict(flat=False)
+
+    uid = 0 # User id hardcoded.
+    if query["filter"][0] == "hide": 
+        filters = images.query.filter_by(id=uid, consumed=False)
+    else:
+        filters = images.query.filter_by(id=uid)
+
+    
+    order_with = None
+    match query["sort"][0]:
+        case "imageid": order_with = "pid"
+        case "fruittype": order_with = "fruit"
+        case "uploadtime": order_with = "upload_date"
+        case "humidity": order_with = "humidity"
+        case "temperature": order_with = "temperature"
+        case "purchasedate": order_with = "purchase_date"
+        case "expirydate": order_with = "prediction"
+        case "consumedate": order_with = "consume_date"
+    
+    if query["order"][0] == "desc": 
+        filters = filters.order_by(desc(text(order_with)))
+    else: 
+        filters = filters.order_by(text(order_with))
+    
+
+    offset = (int(query["page"][0])-1)*int(query["size"][0])
+    filters = filters.offset(offset).limit(int(query["size"][0]))
+    
+
+    counter = 1
+    result = []
+    for image in filters.all():
+        # Convert prediction(integer days) to a date
+        prediction = image.upload_date + timedelta(days=image.prediction)
+
+        result.append({
+            "seq": counter,
+            "imageId": image.pid,
+            "fruitType": image.fruit,
+            "uploadTime": image.upload_date,
+            "humidity": image.humidity,
+            "temperature": image.temperature,
+            "purchaseDate": image.purchase_date,
+            "expiryDate": prediction,
+            "daysNotify": 0, # Hardcoded
+            "consumed": image.consumed,
+            "consumedDate": image.consume_date
+            })
+
+        counter += 1
+
+    return result
 
     # Get all history
 
