@@ -1,10 +1,11 @@
 from flask import Flask, jsonify, request
 from user import create_user, authenticate_user, edit_profile, set_current_user
 from content import process_content
+from sqlalchemy import text, desc
 from flask_sqlalchemy import SQLAlchemy
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import shutil
 import os
@@ -190,6 +191,44 @@ def user_logout():
 @app.route('/prediction', methods=['POST'])
 
 def add_content():
+    # Test: Add entry to image database. 
+    
+    image = images(pid=0, id=0, prediction=5, feedback=3,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
+                   fruit="Apple", temperature="24", humidity="40", path="backend/content", consumed=False)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=1, id=0, prediction=3, feedback=4,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
+                   fruit="Orange", temperature="40", humidity="10", path="backend/content", consumed=False)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=2, id=0, prediction=6, feedback=9,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
+                   fruit="Grape", temperature="15", humidity="33", path="backend/content", consumed=True)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=3, id=1, prediction=6, feedback=9,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
+                   fruit="Grape", temperature="15", humidity="33", path="backend/content", consumed=True)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=4, id=0, prediction=8, feedback=22,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
+                   fruit="Apple", temperature="3", humidity="40", path="backend/content", consumed=True)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=5, id=0, prediction=1, feedback=2,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
+                   fruit="Bananna", temperature="6", humidity="30", path="backend/content", consumed=False)
+    db.session.add(image)
+    db.session.commit()
+
     """
     Route to add a new photo/video
     return: Prediction Date
@@ -255,6 +294,60 @@ def get_user_records():
     Route to get all images/videos posted by the user
     return:
     """
+    # Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
+    query = request.args.to_dict(flat=False)
+
+    uid = 0 # User id hardcoded.
+    if query["filter"][0] == "hide": 
+        filters = images.query.filter_by(id=uid, consumed=False)
+    else:
+        filters = images.query.filter_by(id=uid)
+
+    
+    order_with = None
+    match query["sort"][0]:
+        case "imageid": order_with = "pid"
+        case "fruittype": order_with = "fruit"
+        case "uploadtime": order_with = "upload_date"
+        case "humidity": order_with = "humidity"
+        case "temperature": order_with = "temperature"
+        case "purchasedate": order_with = "purchase_date"
+        case "expirydate": order_with = "prediction"
+        case "consumedate": order_with = "consume_date"
+    
+    if query["order"][0] == "desc": 
+        filters = filters.order_by(desc(text(order_with)))
+    else: 
+        filters = filters.order_by(text(order_with))
+    
+
+    offset = (int(query["page"][0])-1)*int(query["size"][0])
+    filters = filters.offset(offset).limit(int(query["size"][0]))
+    
+
+    counter = 1
+    result = []
+    for image in filters.all():
+        # Convert prediction(integer days) to a date
+        prediction = image.upload_date + timedelta(days=image.prediction)
+
+        result.append({
+            "seq": counter,
+            "imageId": image.pid,
+            "fruitType": image.fruit,
+            "uploadTime": image.upload_date,
+            "humidity": image.humidity,
+            "temperature": image.temperature,
+            "purchaseDate": image.purchase_date,
+            "expiryDate": prediction,
+            "daysNotify": 0, # Hardcoded
+            "consumed": image.consumed,
+            "consumedDate": image.consume_date
+            })
+
+        counter += 1
+
+    return result
 
     # Get all history
 
