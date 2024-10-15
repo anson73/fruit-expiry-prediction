@@ -28,22 +28,6 @@ function getDateNow() {
   return `${year}-${month}-${date}`;
 }
 
-function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
-function getComparator(order, orderBy) {
-  return order === "desc"
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
-
 function EnhancedTableHead(props) {
   const { order, orderBy, onRequestSort } = props;
   const createSortHandler = (property) => (event) => {
@@ -84,7 +68,7 @@ function EnhancedTableHead(props) {
       label: "Notification (Days)",
     },
     {
-      id: "ConsumeDate",
+      id: "consumeDate",
       label: "ConsumeDate",
     },
     {
@@ -123,32 +107,32 @@ function EnhancedTableHead(props) {
 }
 
 EnhancedTableHead.propTypes = {
-  numSelected: PropTypes.number.isRequired,
   onRequestSort: PropTypes.func.isRequired,
-  onSelectAllClick: PropTypes.func.isRequired,
   order: PropTypes.oneOf(["asc", "desc"]).isRequired,
   orderBy: PropTypes.string.isRequired,
   rowCount: PropTypes.number.isRequired,
 };
 
 export default function EnhancedTable(props) {
-  const [order, setOrder] = React.useState("asc");
-  const [orderBy, setOrderBy] = React.useState("calories");
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [rows, setRows] = React.useState(props.historyData);
-  const [originalRows, setOriginalRows] = React.useState(props.historyData);
+  const [rows, setRows] = React.useState([]);
   const [hideConsumed, setHideConsumed] = React.useState(false);
 
   const [modalOpen, setModalOpen] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(true);
   const [showAlert, setShowAlert] = React.useState(false);
 
+  React.useEffect(() => {
+    setRows(props.historyData);
+  }, [props.historyData]);
+  console.log(rows);
+
   const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
+    const isAsc = props.orderBy === property && props.order === "asc";
+    props.setOrder(isAsc ? "desc" : "asc");
+    props.setOrderBy(property);
   };
 
   const handleChangePage = (event, newPage) => {
@@ -168,57 +152,11 @@ export default function EnhancedTable(props) {
   const emptyRows =
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
-  const visibleRows = React.useMemo(
-    () =>
-      [...rows]
-        .sort(getComparator(order, orderBy))
-        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage, rows]
-  );
-
   const viewDetails = () => {};
 
-  // Consume Product: Set the product to consumed in the db
-  // Input: User Id, prediction/product Id, quantity of return value, if consumed products are hidden
-  // Return: the specified quantity of the products sorted by
-  const consumeProduct = (seq) => {
-    let modifiedRows = [];
-    let originalRows = [];
-    rows.forEach((row) => {
-      //console.log(row.seq, seq, row.consumed);
-      if (row.seq === seq && row.consumed === true) {
-        row.consumed = false;
-        row.consumeDate = "";
-        modifiedRows.push(row);
-        //console.log("unconsume the product");
-      } else if (row.seq === seq && row.consumed === false) {
-        row.consumed = true;
-        row.consumeDate = getDateNow();
-        //console.log("consume the product");
-      } else {
-        modifiedRows.push(row);
-      }
-      originalRows.push(row);
-    });
-    setRows(modifiedRows);
-    setOriginalRows(originalRows);
-  };
+  const deleteProduct = (seq) => {};
 
-  const deleteProduct = (seq) => {
-    setRows(rows.filter((row) => row.seq !== seq));
-    setOriginalRows(originalRows.filter((row) => row.seq !== seq));
-  };
-
-  const handleHideConsumed = () => {
-    setOriginalRows(rows);
-    if (!hideConsumed) {
-      setRows(rows.filter((row) => row.consumed === false));
-      setHideConsumed(true);
-    } else {
-      setRows(originalRows);
-      setHideConsumed(false);
-    }
-  };
+  const handleHideConsumed = () => {};
 
   const handleModalOpen = () => setModalOpen(true);
   const handleModalClose = () => setModalOpen(false);
@@ -369,13 +307,13 @@ export default function EnhancedTable(props) {
             size={dense ? "small" : "medium"}
           >
             <EnhancedTableHead
-              order={order}
-              orderBy={orderBy}
+              order={props.order}
+              orderBy={props.orderBy}
               onRequestSort={handleRequestSort}
               rowCount={rows.length}
             />
             <TableBody>
-              {visibleRows.map((row) => {
+              {rows.map((row) => {
                 return (
                   <TableRow
                     hover
@@ -391,7 +329,7 @@ export default function EnhancedTable(props) {
                     <TableCell align="center">{row.purchaseDate}</TableCell>
                     <TableCell align="center">{row.expiryDate}</TableCell>
                     <TableCell align="center">{row.daysNotify}</TableCell>
-                    <TableCell align="left">{row.consumeDate}</TableCell>
+                    <TableCell align="left">{row.consumedDate}</TableCell>
                     <TableCell align="left">
                       <Button
                         variant="outlined"
@@ -399,11 +337,8 @@ export default function EnhancedTable(props) {
                       >
                         View
                       </Button>
-                      <notificationModal />
-                      <Button
-                        variant="outlined"
-                        onClick={() => consumeProduct(row.seq)}
-                      >
+
+                      <Button variant="outlined">
                         {row.consumed ? <>Un-consume</> : <>Consume</>}
                       </Button>
                       <Button variant="outlined" onClick={handleModalOpen}>

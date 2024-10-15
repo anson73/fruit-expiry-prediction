@@ -307,13 +307,13 @@ def get_user_records():
     order_with = None
     match query["sort"][0]:
         case "imageid": order_with = "pid"
-        case "fruittype": order_with = "fruit"
-        case "uploadtime": order_with = "upload_date"
+        case "fruitType": order_with = "fruit"
+        case "uploadTime": order_with = "upload_date"
         case "humidity": order_with = "humidity"
         case "temperature": order_with = "temperature"
-        case "purchasedate": order_with = "purchase_date"
-        case "expirydate": order_with = "prediction"
-        case "consumedate": order_with = "consume_date"
+        case "purchaseDate": order_with = "purchase_date"
+        case "expiryDate": order_with = "prediction"
+        case "consumeDate": order_with = "consume_date"
     
     if query["order"][0] == "desc": 
         filters = filters.order_by(desc(text(order_with)))

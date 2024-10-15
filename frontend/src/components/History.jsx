@@ -4,140 +4,29 @@ import Typography from "@mui/material/Typography";
 import HistoryTable from "./HistoryTable";
 
 const History = () => {
-  function createData(
-    seq,
-    imageId,
-    fruitType,
-    uploadTime,
-    humidity,
-    temperature,
-    purchaseDate,
-    expiryDate,
-    daysNotify,
-    consumed,
-    consumeDate
-  ) {
-    return {
-      seq,
-      imageId,
-      fruitType,
-      uploadTime,
-      humidity,
-      temperature,
-      purchaseDate,
-      expiryDate,
-      daysNotify,
-      consumed,
-      consumeDate,
-    };
-  }
+  const [order, setOrder] = React.useState("asc");
+  const [history, setHistory] = React.useState([]);
+  const [orderBy, setOrderBy] = React.useState("fruitType");
 
-  const defaultRows = [
-    createData(
-      1,
-      0,
-      "Apple",
-      "2024-09-20",
-      67,
-      27,
-      "2024-09-20",
-      "2024-09-30",
-      5,
-      false,
-      ""
-    ),
-    createData(
-      2,
-      1,
-      "Banana",
-      "2024-09-20",
-      51,
-      34,
-      "2024-09-20",
-      "2024-09-30",
-      3,
-      true,
-      "2024-09-25"
-    ),
-    createData(
-      3,
-      2,
-      "Tomato",
-      "2024-09-20",
-      24,
-      22,
-      "2024-09-20",
-      "2024-09-30",
-      4,
-      false,
-      ""
-    ),
-    createData(
-      4,
-      3,
-      "Apple",
-      "2024-10-20",
-      24,
-      22,
-      "2024-10-20",
-      "2024-10-30",
-      2,
-      false,
-      ""
-    ),
-    createData(
-      5,
-      4,
-      "Banana",
-      "2024-10-20",
-      24,
-      22,
-      "2024-10-20",
-      "2024-10-30",
-      6,
-      false,
-      ""
-    ),
-    createData(
-      6,
-      5,
-      "Pear",
-      "2024-10-20",
-      24,
-      22,
-      "2024-10-20",
-      "2024-10-30",
-      4,
-      false,
-      ""
-    ),
-    createData(
-      7,
-      6,
-      "Mango",
-      "2024-10-20",
-      24,
-      22,
-      "2024-10-20",
-      "2024-10-30",
-      3,
-      false,
-      ""
-    ),
-    createData(
-      8,
-      7,
-      "Grapefruit",
-      "2024-10-20",
-      24,
-      22,
-      "2024-10-20",
-      "2024-10-30",
-      2,
-      false,
-      ""
-    ),
-  ];
+  React.useEffect(() => {
+    async function getHistoryData() {
+      const response = await fetch(
+        `http://localhost:5005/history?filter=unhide&page=1&size=10&sort=${orderBy}&order=${order}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      setHistory(data);
+      console.log(data);
+    }
+    getHistoryData();
+  }, [order, orderBy]);
+
+  console.log(history);
 
   return (
     <div
@@ -172,7 +61,13 @@ const History = () => {
           alignItems: "center",
         }}
       >
-        <HistoryTable historyData={defaultRows} />
+        <HistoryTable
+          historyData={history}
+          order={order}
+          orderBy={orderBy}
+          setOrder={setOrder}
+          setOrderBy={setOrderBy}
+        />
       </div>
     </div>
   );
