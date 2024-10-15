@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from user import create_user, authenticate_user, edit_profile, set_current_user
 from content import process_content
+from sqlalchemy import text, desc
 from flask_sqlalchemy import SQLAlchemy
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
@@ -210,6 +211,44 @@ def user_logout():
 @app.route('/prediction', methods=['POST'])
 
 def add_content():
+    # Test: Add entry to image database. 
+    
+    image = images(pid=0, id=0, prediction=5, feedback=3,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
+                   fruit="Apple", temperature="24", humidity="40", path="backend/content", consumed=False)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=1, id=0, prediction=3, feedback=4,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
+                   fruit="Orange", temperature="40", humidity="10", path="backend/content", consumed=False)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=2, id=0, prediction=6, feedback=9,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
+                   fruit="Grape", temperature="15", humidity="33", path="backend/content", consumed=True)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=3, id=1, prediction=6, feedback=9,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
+                   fruit="Grape", temperature="15", humidity="33", path="backend/content", consumed=True)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=4, id=0, prediction=8, feedback=22,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
+                   fruit="Apple", temperature="3", humidity="40", path="backend/content", consumed=True)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=5, id=0, prediction=1, feedback=2,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
+                   fruit="Bananna", temperature="6", humidity="30", path="backend/content", consumed=False)
+    db.session.add(image)
+    db.session.commit()
+    
     """
     Route to add a new photo/video
     return: Prediction Date
