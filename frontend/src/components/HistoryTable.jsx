@@ -1,6 +1,5 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -10,143 +9,16 @@ import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
 import Button from "@mui/material/Button";
 
-function createData(
-  seq,
-  imageId,
-  fruitType,
-  uploadTime,
-  humidity,
-  temperature,
-  purchaseDate,
-  expiryDate,
-  consumed,
-  consumeDate
-) {
-  return {
-    seq,
-    imageId,
-    fruitType,
-    uploadTime,
-    humidity,
-    temperature,
-    purchaseDate,
-    expiryDate,
-    consumed,
-    consumeDate,
-  };
-}
-
-const defaultRows = [
-  createData(
-    1,
-    0,
-    "Apple",
-    "2024-09-20",
-    67,
-    27,
-    "2024-09-20",
-    "2024-09-30",
-    false,
-    ""
-  ),
-  createData(
-    2,
-    1,
-    "Banana",
-    "2024-09-20",
-    51,
-    34,
-    "2024-09-20",
-    "2024-09-30",
-    true,
-    "2024-09-25"
-  ),
-  createData(
-    3,
-    2,
-    "Tomato",
-    "2024-09-20",
-    24,
-    22,
-    "2024-09-20",
-    "2024-09-30",
-    false,
-    ""
-  ),
-  createData(
-    4,
-    3,
-    "Apple",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    5,
-    4,
-    "Banana",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    6,
-    5,
-    "Pear",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    7,
-    6,
-    "Mango",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    8,
-    7,
-    "Grapefruit",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-];
+import Modal from "@mui/material/Modal";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
 
 function getDateNow() {
   const today = new Date();
@@ -172,101 +44,63 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-const headCells = [
-  {
-    id: "seq",
-    numeric: true,
-    disablePadding: true,
-    label: "No.",
-  },
-  {
-    id: "imageId",
-    numeric: true,
-    disablePadding: false,
-    label: "Image ID",
-  },
-  {
-    id: "fruitType",
-    numeric: false,
-    disablePadding: false,
-    label: "Fruit Type",
-  },
-  {
-    id: "uploadTime",
-    numeric: false,
-    disablePadding: false,
-    label: "Upload Time",
-  },
-  {
-    id: "humidity",
-    numeric: true,
-    disablePadding: false,
-    label: "Humidity",
-  },
-  {
-    id: "temperature",
-    numeric: true,
-    disablePadding: false,
-    label: "Temperature",
-  },
-  {
-    id: "purchaseDate",
-    numeric: true,
-    disablePadding: false,
-    label: "Purchase Date",
-  },
-  {
-    id: "expiryDate",
-    numeric: true,
-    disablePadding: false,
-    label: "Expiry Date",
-  },
-  {
-    id: "ConsumeDate",
-    numeric: true,
-    disablePadding: false,
-    label: "ConsumeDate",
-  },
-  {
-    id: "action",
-    numeric: false,
-    disablePadding: false,
-    label: "Action",
-  },
-];
-
 function EnhancedTableHead(props) {
-  const {
-    onSelectAllClick,
-    order,
-    orderBy,
-    numSelected,
-    rowCount,
-    onRequestSort,
-  } = props;
+  const { order, orderBy, onRequestSort } = props;
   const createSortHandler = (property) => (event) => {
     onRequestSort(event, property);
   };
 
+  const headCells = [
+    {
+      id: "seq",
+      label: "No.",
+    },
+    {
+      id: "fruitType",
+      label: "Fruit Type",
+    },
+    {
+      id: "uploadTime",
+      label: "Upload Time",
+    },
+    {
+      id: "humidity",
+      label: "Humidity",
+    },
+    {
+      id: "temperature",
+      label: "Temperature",
+    },
+    {
+      id: "purchaseDate",
+      label: "Purchase Date",
+    },
+    {
+      id: "expiryDate",
+      label: "Expiry Date",
+    },
+    {
+      id: "daysNotify",
+      label: "Notification (Days)",
+    },
+    {
+      id: "ConsumeDate",
+      label: "ConsumeDate",
+    },
+    {
+      id: "action",
+      label: "Action",
+    },
+  ];
+
   return (
     <TableHead>
       <TableRow>
-        <TableCell padding="checkbox">
-          <Checkbox
-            color="primary"
-            indeterminate={numSelected > 0 && numSelected < rowCount}
-            checked={rowCount > 0 && numSelected === rowCount}
-            onChange={onSelectAllClick}
-            inputProps={{
-              "aria-label": "select all desserts",
-            }}
-          />
-        </TableCell>
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
-            align={headCell.numeric ? "center" : "left"}
-            padding={headCell.disablePadding ? "none" : "normal"}
+            align="center"
+            padding="normal"
             sortDirection={orderBy === headCell.id ? order : false}
           >
             <TableSortLabel
@@ -297,98 +131,24 @@ EnhancedTableHead.propTypes = {
   rowCount: PropTypes.number.isRequired,
 };
 
-function EnhancedTableToolbar(props) {
-  const { numSelected } = props;
-  return (
-    <Toolbar
-      sx={[
-        {
-          pl: { sm: 2 },
-          pr: { xs: 1, sm: 1 },
-        },
-        numSelected > 0 && {
-          bgcolor: (theme) =>
-            alpha(
-              theme.palette.primary.main,
-              theme.palette.action.activatedOpacity
-            ),
-        },
-      ]}
-    >
-      {numSelected > 0 ? (
-        <Typography
-          sx={{ flex: "1 1 100%" }}
-          color="inherit"
-          variant="subtitle1"
-          component="div"
-        >
-          {numSelected} selected
-        </Typography>
-      ) : null}
-      {numSelected > 0 ? (
-        <Tooltip title="Delete">
-          <IconButton>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      ) : (
-        <Tooltip title="Filter list">
-          <IconButton>
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Toolbar>
-  );
-}
-
-EnhancedTableToolbar.propTypes = {
-  numSelected: PropTypes.number.isRequired,
-};
-
-export default function EnhancedTable() {
+export default function EnhancedTable(props) {
   const [order, setOrder] = React.useState("asc");
   const [orderBy, setOrderBy] = React.useState("calories");
-  const [selected, setSelected] = React.useState([]);
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [rows, setRows] = React.useState(defaultRows);
-  const [originalRows, setOriginalRows] = React.useState(defaultRows);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [rows, setRows] = React.useState(props.historyData);
+  const [originalRows, setOriginalRows] = React.useState(props.historyData);
   const [hideConsumed, setHideConsumed] = React.useState(false);
+
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [alertOpen, setAlertOpen] = React.useState(true);
+  const [showAlert, setShowAlert] = React.useState(false);
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
-  };
-
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      const newSelected = rows.map((n) => n.seq);
-      setSelected(newSelected);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleClick = (event, id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
-    }
-    setSelected(newSelected);
   };
 
   const handleChangePage = (event, newPage) => {
@@ -418,8 +178,12 @@ export default function EnhancedTable() {
 
   const viewDetails = () => {};
 
-  const consumeProduct = (event, seq) => {
+  // Consume Product: Set the product to consumed in the db
+  // Input: User Id, prediction/product Id, quantity of return value, if consumed products are hidden
+  // Return: the specified quantity of the products sorted by
+  const consumeProduct = (seq) => {
     let modifiedRows = [];
+    let originalRows = [];
     rows.forEach((row) => {
       //console.log(row.seq, seq, row.consumed);
       if (row.seq === seq && row.consumed === true) {
@@ -434,15 +198,13 @@ export default function EnhancedTable() {
       } else {
         modifiedRows.push(row);
       }
+      originalRows.push(row);
     });
-    if (!hideConsumed) {
-      setRows(rows.filter((row) => row.consumed === false));
-      setHideConsumed(true);
-    }
     setRows(modifiedRows);
+    setOriginalRows(originalRows);
   };
 
-  const deleteProduct = (event, seq) => {
+  const deleteProduct = (seq) => {
     setRows(rows.filter((row) => row.seq !== seq));
     setOriginalRows(originalRows.filter((row) => row.seq !== seq));
   };
@@ -458,21 +220,148 @@ export default function EnhancedTable() {
     }
   };
 
+  const handleModalOpen = () => setModalOpen(true);
+  const handleModalClose = () => setModalOpen(false);
+  const handleAlertOpen = () => setShowAlert(true);
+  const handleAlertClose = () => setShowAlert(false);
+
   return (
-    <Box sx={{ width: "80%" }}>
-      <Paper sx={{ width: "100%", mb: 2, justifyContent: "center" }}>
+    <Box sx={{ width: "90%" }}>
+      <Modal open={showAlert}>
+        <Box
+          sx={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "60%",
+            height: "27.5%",
+            bgcolor: "background.paper",
+            padding: "2rem",
+            gap: "1rem",
+            alignItems: "center",
+          }}
+        >
+          <h2>Notification</h2>
+          <Typography
+            style={{
+              width: "90%",
+            }}
+          >
+            The following fresh products will expire shortly.
+          </Typography>
+
+          <Button
+            variant="outlined"
+            style={{
+              width: "90%",
+            }}
+            onClick={handleAlertClose}
+          >
+            Close
+          </Button>
+        </Box>
+      </Modal>
+      <Modal open={modalOpen}>
+        <Box
+          sx={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "30%",
+            height: "27.5%",
+            bgcolor: "background.paper",
+            padding: "2rem",
+            gap: "1rem",
+            alignItems: "center",
+          }}
+        >
+          <h2>Notification Days</h2>
+          <Typography
+            style={{
+              width: "90%",
+            }}
+          >
+            Please input the number of days you would like to be notified prior
+            to the expiry date of the product.
+          </Typography>
+          <TextField
+            label="Number of Days"
+            type="number"
+            variant="filled"
+            slotProps={{
+              inputLabel: {
+                shrink: true,
+              },
+            }}
+            style={{
+              width: "90%",
+            }}
+          />
+          <Button
+            variant="outlined"
+            style={{
+              width: "90%",
+            }}
+          >
+            Open modal
+          </Button>
+          <Button
+            variant="outlined"
+            style={{
+              width: "90%",
+            }}
+            onClick={handleModalClose}
+          >
+            Cancel
+          </Button>
+        </Box>
+      </Modal>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+        }}
+      >
         <FormControlLabel
           style={{
-            padding: "1rem",
+            padding: "0.5rem",
             marginLeft: "0rem",
             background: "#f2f2f2",
+            width: "15rem",
           }}
           control={<Checkbox />}
           label="Hide Consumed Products"
           onChange={(event) => handleHideConsumed()}
         />
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <div
+          style={{
+            //border: "solid, 1px black",
+            width: "calc(100% - 15rem - 10rem)",
+          }}
+        ></div>
+        {alertOpen ? (
+          <Button
+            //variant="outlined"
+            onClick={handleAlertOpen}
+            style={{
+              height: "3.5rem",
+              width: "10rem",
+              backgroundColor: "#fc9b9d",
+              color: "black",
+            }}
+          >
+            Open Alert
+          </Button>
+        ) : null}
+      </div>
 
+      <Paper sx={{ width: "100%", marginTop: "1rem" }}>
         <TableContainer>
           <Table
             sx={{ minWidth: 750 }}
@@ -480,70 +369,49 @@ export default function EnhancedTable() {
             size={dense ? "small" : "medium"}
           >
             <EnhancedTableHead
-              numSelected={selected.length}
               order={order}
               orderBy={orderBy}
-              onSelectAllClick={handleSelectAllClick}
               onRequestSort={handleRequestSort}
               rowCount={rows.length}
             />
             <TableBody>
-              {visibleRows.map((row, index) => {
-                const isItemSelected = selected.includes(row.seq);
-                const labelId = `enhanced-table-checkbox-${index}`;
-
+              {visibleRows.map((row) => {
                 return (
                   <TableRow
                     hover
                     //role="checkbox"
-                    aria-checked={isItemSelected}
                     tabIndex={-1}
                     key={row.seq}
-                    selected={isItemSelected}
                   >
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        color="primary"
-                        checked={isItemSelected}
-                        onClick={(event) => handleClick(event, row.seq)}
-                        inputProps={{
-                          "aria-labelledby": labelId,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell
-                      component="th"
-                      id={labelId}
-                      scope="row"
-                      padding="none"
-                      align="left"
-                    >
-                      {row.seq}
-                    </TableCell>
-                    <TableCell align="center">{row.imageId}</TableCell>
+                    <TableCell align="left">{row.seq}</TableCell>
                     <TableCell align="left">{row.fruitType}</TableCell>
-                    <TableCell align="left">{row.uploadTime}</TableCell>
-                    <TableCell align="left">{row.humidity}</TableCell>
-                    <TableCell align="left">{row.temperature}</TableCell>
-                    <TableCell align="left">{row.purchaseDate}</TableCell>
-                    <TableCell align="left">{row.expiryDate}</TableCell>
+                    <TableCell align="center">{row.uploadTime}</TableCell>
+                    <TableCell align="center">{row.humidity}</TableCell>
+                    <TableCell align="center">{row.temperature}</TableCell>
+                    <TableCell align="center">{row.purchaseDate}</TableCell>
+                    <TableCell align="center">{row.expiryDate}</TableCell>
+                    <TableCell align="center">{row.daysNotify}</TableCell>
                     <TableCell align="left">{row.consumeDate}</TableCell>
                     <TableCell align="left">
                       <Button
                         variant="outlined"
-                        onClick={(event) => viewDetails(event, row.seq)}
+                        onClick={() => viewDetails(row.seq)}
                       >
                         View
                       </Button>
+                      <notificationModal />
                       <Button
                         variant="outlined"
-                        onClick={(event) => consumeProduct(event, row.seq)}
+                        onClick={() => consumeProduct(row.seq)}
                       >
                         {row.consumed ? <>Un-consume</> : <>Consume</>}
                       </Button>
+                      <Button variant="outlined" onClick={handleModalOpen}>
+                        Open modal
+                      </Button>
                       <Button
                         variant="outlined"
-                        onClick={(event) => deleteProduct(row.seq)}
+                        onClick={() => deleteProduct(row.seq)}
                       >
                         Delete
                       </Button>

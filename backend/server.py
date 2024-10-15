@@ -77,30 +77,10 @@ app.app_context().push()
 db.init_app(app)
 with app.app_context():
     db.create_all()
-<<<<<<< HEAD
-
-# create an instance of the login manager
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-# Assign Login View
-login_manager = LoginManager()
-# Redirect to the login page if authentication fails
-login_manager.login_view = "http://localhost:3000/login" #TODO REDIRECT LOGIN PAGE
-login_manager.init_app(app)
-
-
-# Query user from the database based on id
-@login_manager.user_loader
-def load_user(id):
-    # Query user from database based on id
-    return users.query.get(id)
-=======
 # Initialize the flask-praetorian instance for the app
 guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
->>>>>>> origin/BACKEND_SQLDatabase
 
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
