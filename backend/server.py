@@ -69,6 +69,7 @@ class images(db.Model):
     humidity =  db.Column(db.Integer)
     path = db.Column(db.String(100))
     consumed = db.Column(db.Boolean)
+    notification_days = db.Column(db.Integer)
 
     def __repr__(self):
         return '<PID %r>' % self.pid
@@ -189,7 +190,6 @@ def user_logout():
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
 @app.route('/prediction', methods=['POST'])
-
 def add_content():
     # Test: Add entry to image database. 
     
@@ -288,11 +288,10 @@ def add_content():
 
 
 @app.route('/history', methods=['GET'])
-
 def get_user_records():
     """
     Route to get all images/videos posted by the user
-    return:
+    return: List of Dictionaries
     """
     # Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
     query = request.args.to_dict(flat=False)
@@ -349,22 +348,62 @@ def get_user_records():
 
     return result
 
-    # Get all history
+@app.route('/history/consume', methods=['POST'])
+def consume():
+    """
+    Route to change the consumed status of an image
+    return: 200 for success, 404 if imageid not found
+    """
 
-    # image_query = images.query.filter_by(pid=pid).first()
+    # Example usage: /history/consume?imageid=1
 
-    # View button (Return path to image in content folder)
-    # image_path = image_query.path
+    image_id = int(request.args.get('imageid'))
+    consume_image = images.query.filter_by(pid=image_id).first()
+    if not consume_image:
+        return "Image id not found", 404
+    
+    consume_image.consumed = not consume_image.consumed
+    db.session.commit()
 
-    # Consume/Unconsume button
-    # image_query.consumed = not image_query.consumed
-    # db.session.commit()
+    return "Image consumption status changed", 200
 
+@app.route('/history/notification', methods=['POST'])
+def notification_days():
+    """
+    Route to change expiry notification days for an image
+    return: 200 for success, 404 if imageid not found
+    """
 
-    # Delete button
-    # db.session.delete(image_query)
-    # db.session.commit()
+    # Example usage: /history/notification?imageid=1&days=1
 
+    image_id = int(request.args.get('imageid'))
+    selected_image = images.query.filter_by(pid=image_id).first()
+    if not selected_image:
+        return "Image id not found", 404
+
+    selected_image.notification_days = int(request.args.get('days'))
+    db.session.commit()
+
+    return "Notification days changed", 200
+
+@app.route('/history/delete', methods=['DELETE'])
+def delete():
+    """
+    Route to delete a selected image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/delete?imageid=1
+
+    image_id = int(request.args.get('imageid'))
+    delete_image = images.query.filter_by(pid=image_id).first()
+    if not delete_image:
+        return "Image id not found", 404
+
+    db.session.delete(delete_image)
+    db.session.commit()
+
+    return "Image Deleted", 200
 
 @app.route('/history', methods=['POST'])
 def add_feedback():
