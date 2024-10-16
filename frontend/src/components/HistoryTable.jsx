@@ -18,15 +18,6 @@ import Button from "@mui/material/Button";
 
 import Modal from "@mui/material/Modal";
 import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
-
-function getDateNow() {
-  const today = new Date();
-  const month = today.getMonth() + 1;
-  const year = today.getFullYear();
-  const date = today.getDate();
-  return `${year}-${month}-${date}`;
-}
 
 function EnhancedTableHead(props) {
   const { order, orderBy, onRequestSort } = props;
@@ -118,7 +109,6 @@ export default function EnhancedTable(props) {
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [rows, setRows] = React.useState([]);
-  const [hideConsumed, setHideConsumed] = React.useState(false);
 
   const [modalOpen, setModalOpen] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(true);
@@ -154,14 +144,8 @@ export default function EnhancedTable(props) {
 
   const viewDetails = () => {};
 
-  const deleteProduct = (seq) => {};
-
-  const handleHideConsumed = () => {};
-
   const handleModalOpen = () => setModalOpen(true);
   const handleModalClose = () => setModalOpen(false);
-  const handleAlertOpen = () => setShowAlert(true);
-  const handleAlertClose = () => setShowAlert(false);
 
   return (
     <Box sx={{ width: "90%" }}>
@@ -196,70 +180,12 @@ export default function EnhancedTable(props) {
             style={{
               width: "90%",
             }}
-            onClick={handleAlertClose}
           >
             Close
           </Button>
         </Box>
       </Modal>
-      <Modal open={modalOpen}>
-        <Box
-          sx={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "30%",
-            height: "27.5%",
-            bgcolor: "background.paper",
-            padding: "2rem",
-            gap: "1rem",
-            alignItems: "center",
-          }}
-        >
-          <h2>Notification Days</h2>
-          <Typography
-            style={{
-              width: "90%",
-            }}
-          >
-            Please input the number of days you would like to be notified prior
-            to the expiry date of the product.
-          </Typography>
-          <TextField
-            label="Number of Days"
-            type="number"
-            variant="filled"
-            slotProps={{
-              inputLabel: {
-                shrink: true,
-              },
-            }}
-            style={{
-              width: "90%",
-            }}
-          />
-          <Button
-            variant="outlined"
-            style={{
-              width: "90%",
-            }}
-          >
-            Open modal
-          </Button>
-          <Button
-            variant="outlined"
-            style={{
-              width: "90%",
-            }}
-            onClick={handleModalClose}
-          >
-            Cancel
-          </Button>
-        </Box>
-      </Modal>
+
       <div
         style={{
           display: "flex",
@@ -275,7 +201,7 @@ export default function EnhancedTable(props) {
           }}
           control={<Checkbox />}
           label="Hide Consumed Products"
-          onChange={(event) => handleHideConsumed()}
+          onChange={() => props.controlHideConsumed()}
         />
         <div
           style={{
@@ -286,7 +212,6 @@ export default function EnhancedTable(props) {
         {alertOpen ? (
           <Button
             //variant="outlined"
-            onClick={handleAlertOpen}
             style={{
               height: "3.5rem",
               width: "10rem",
@@ -338,7 +263,10 @@ export default function EnhancedTable(props) {
                         View
                       </Button>
 
-                      <Button variant="outlined">
+                      <Button
+                        variant="outlined"
+                        onClick={() => props.consumeProduct(row.imageId)}
+                      >
                         {row.consumed ? <>Un-consume</> : <>Consume</>}
                       </Button>
                       <Button variant="outlined" onClick={handleModalOpen}>
@@ -346,7 +274,7 @@ export default function EnhancedTable(props) {
                       </Button>
                       <Button
                         variant="outlined"
-                        onClick={() => deleteProduct(row.seq)}
+                        onClick={() => props.deleteProduct(row.imageId)}
                       >
                         Delete
                       </Button>

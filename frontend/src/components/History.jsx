@@ -7,11 +7,17 @@ const History = () => {
   const [order, setOrder] = React.useState("asc");
   const [history, setHistory] = React.useState([]);
   const [orderBy, setOrderBy] = React.useState("fruitType");
+  const [updateData, setUpdateData] = React.useState(false);
+  const [hideConsumed, setHideConsumed] = React.useState(false);
 
   React.useEffect(() => {
     async function getHistoryData() {
+      let hideConsumedVariable = "unhide";
+      hideConsumed
+        ? (hideConsumedVariable = "hide")
+        : (hideConsumedVariable = "unhide");
       const response = await fetch(
-        `http://localhost:5005/history?filter=unhide&page=1&size=10&sort=${orderBy}&order=${order}`,
+        `http://localhost:5005/history?filter=${hideConsumedVariable}&page=1&size=10&sort=${orderBy}&order=${order}`,
         {
           method: "GET",
           headers: {
@@ -22,11 +28,46 @@ const History = () => {
       const data = await response.json();
       setHistory(data);
       console.log(data);
+      setUpdateData(false);
     }
     getHistoryData();
-  }, [order, orderBy]);
+  }, [order, orderBy, updateData, hideConsumed]);
 
-  console.log(history);
+  //console.log(history);
+
+  const controlHideConsumed = () => {
+    hideConsumed ? setHideConsumed(false) : setHideConsumed(true);
+  };
+
+  const consumeProduct = async (imageId) => {
+    const response = await fetch(
+      `http://localhost:5005/history/consume?imageid=${imageId}`,
+      {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+      }
+    );
+    //console.log(response);
+    if (response.status !== 200) {
+      console.log("Error! Invalid Consumption!");
+    }
+    setUpdateData(true);
+  };
+
+  const deleteProduct = async (imageId) => {
+    const response = await fetch(
+      `http://localhost:5005/history/delete?imageid=${imageId}`,
+      {
+        method: "DELETE",
+        headers: { "Content-type": "application/json" },
+      }
+    );
+    //console.log(response);
+    if (response.status !== 200) {
+      console.log("Error! Invalid Delete!");
+    }
+    setUpdateData(true);
+  };
 
   return (
     <div
@@ -67,6 +108,10 @@ const History = () => {
           orderBy={orderBy}
           setOrder={setOrder}
           setOrderBy={setOrderBy}
+          deleteProduct={deleteProduct}
+          setUpdateData={setUpdateData}
+          consumeProduct={consumeProduct}
+          controlHideConsumed={controlHideConsumed}
         />
       </div>
     </div>

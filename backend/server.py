@@ -370,6 +370,10 @@ def consume():
     if not consume_image:
         return "Image id not found", 404
     
+    if (consume_image.consumed):
+        consume_image.consume_date = None
+    else: 
+        consume_image.consume_date = datetime.now()
     consume_image.consumed = not consume_image.consumed
     db.session.commit()
 
