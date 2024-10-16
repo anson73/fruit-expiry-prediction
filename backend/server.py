@@ -69,7 +69,7 @@ class images(db.Model):
     humidity =  db.Column(db.Integer)
     path = db.Column(db.String(100))
     consumed = db.Column(db.Boolean)
-    notification_days = db.Column(db.Integer)
+    notification_days = db.Column(db.Integer, default=0)
 
     def __repr__(self):
         return '<PID %r>' % self.pid
@@ -194,38 +194,45 @@ def add_content():
     # Test: Add entry to image database. 
     
     image = images(pid=0, id=0, prediction=5, feedback=3,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
-                   fruit="Apple", temperature="24", humidity="40", path="backend/content", consumed=False)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, fruit="Apple", 
+                   temperature="24", humidity="40", path="backend/content", notification_days = 1, consumed=False)
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=1, id=0, prediction=3, feedback=4,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
-                   fruit="Orange", temperature="40", humidity="10", path="backend/content", consumed=False)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, fruit="Orange", 
+                   temperature="40", humidity="10", path="backend/content", notification_days = 3, consumed=False)
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=2, id=0, prediction=6, feedback=9,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
-                   fruit="Grape", temperature="15", humidity="33", path="backend/content", consumed=True)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), fruit="Grape", 
+                   temperature="15", humidity="33", path="backend/content", notification_days = 8, consumed=True)
     db.session.add(image)
     db.session.commit()
 
+    # This test has a user id of 1, so it should not show in the history page
     image = images(pid=3, id=1, prediction=6, feedback=9,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
-                   fruit="Grape", temperature="15", humidity="33", path="backend/content", consumed=True)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), fruit="Grape", 
+                   temperature="15", humidity="33", path="backend/content", notification_days = 4, consumed=True)
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=4, id=0, prediction=8, feedback=22,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
-                   fruit="Apple", temperature="3", humidity="40", path="backend/content", consumed=True)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), fruit="Apple", 
+                   temperature="3", humidity="40", path="backend/content", notification_days = 2, consumed=True)
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=5, id=0, prediction=1, feedback=2,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
-                   fruit="Bananna", temperature="6", humidity="30", path="backend/content", consumed=False)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, fruit="Bananna", 
+                   temperature="6", humidity="30", path="backend/content", notification_days = 10, consumed=False)
+    db.session.add(image)
+    db.session.commit()
+
+    image = images(pid=6, id=0, prediction=6, feedback=6,
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, fruit="Mango", 
+                   temperature="6", humidity="30", path="backend/content", consumed=False)
     db.session.add(image)
     db.session.commit()
 
@@ -312,6 +319,7 @@ def get_user_records():
         case "temperature": order_with = "temperature"
         case "purchaseDate": order_with = "purchase_date"
         case "expiryDate": order_with = "prediction"
+        case "daysNotify": order_with = "notification_days"
         case "consumeDate": order_with = "consume_date"
     
     if query["order"][0] == "desc": 
@@ -339,7 +347,7 @@ def get_user_records():
             "temperature": image.temperature,
             "purchaseDate": image.purchase_date,
             "expiryDate": prediction,
-            "daysNotify": 0, # Hardcoded
+            "daysNotify": image.notification_days,
             "consumed": image.consumed,
             "consumedDate": image.consume_date
             })
