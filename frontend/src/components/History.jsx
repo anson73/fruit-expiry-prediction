@@ -6,9 +6,11 @@ import HistoryTable from "./HistoryTable";
 const History = () => {
   const [order, setOrder] = React.useState("asc");
   const [history, setHistory] = React.useState([]);
+  const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [orderBy, setOrderBy] = React.useState("fruitType");
   const [updateData, setUpdateData] = React.useState(false);
   const [hideConsumed, setHideConsumed] = React.useState(false);
+  const [alertContent, setAlertContent] = React.useState([]);
 
   React.useEffect(() => {
     async function getHistoryData() {
@@ -17,7 +19,7 @@ const History = () => {
         ? (hideConsumedVariable = "hide")
         : (hideConsumedVariable = "unhide");
       const response = await fetch(
-        `http://localhost:5005/history?filter=${hideConsumedVariable}&page=1&size=10&sort=${orderBy}&order=${order}`,
+        `http://localhost:5005/history?filter=${hideConsumedVariable}&page=1&size=${rowsPerPage}&sort=${orderBy}&order=${order}`,
         {
           method: "GET",
           headers: {
@@ -27,13 +29,23 @@ const History = () => {
       );
       const data = await response.json();
       setHistory(data);
-      console.log(data);
+      //console.log(data);
       setUpdateData(false);
     }
+    async function getAlertData() {
+      const response = await fetch(`http://localhost:5005/history/alert`, {
+        method: "GET",
+        headers: { "Content-type": "application/json" },
+      });
+      const data = await response.json();
+      setAlertContent(data);
+    }
     getHistoryData();
-  }, [order, orderBy, updateData, hideConsumed]);
+    getAlertData();
+  }, [order, orderBy, updateData, hideConsumed, rowsPerPage]);
 
   //console.log(history);
+  console.log(alertContent);
 
   const controlHideConsumed = () => {
     hideConsumed ? setHideConsumed(false) : setHideConsumed(true);
@@ -50,6 +62,17 @@ const History = () => {
     //console.log(response);
     if (response.status !== 200) {
       console.log("Error! Invalid Consumption!");
+    }
+    setUpdateData(true);
+  };
+
+  const changeNotifDate = async (imageId, days) => {
+    const response = await fetch(
+      `http://localhost:5005/history/notification?imageid=${imageId}&days=${days}`,
+      { method: "POST", headers: { "Content-type": "application/json" } }
+    );
+    if (response.status !== 200) {
+      console.log("Error! Invalid Notification Date Change!");
     }
     setUpdateData(true);
   };
@@ -112,6 +135,10 @@ const History = () => {
           setUpdateData={setUpdateData}
           consumeProduct={consumeProduct}
           controlHideConsumed={controlHideConsumed}
+          changeNotifDate={changeNotifDate}
+          rowsPerPage={rowsPerPage}
+          setRowsPerPage={setRowsPerPage}
+          alertContent={alertContent}
         />
       </div>
     </div>

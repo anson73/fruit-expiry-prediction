@@ -1,19 +1,5 @@
 import * as React from "react";
-import PropTypes from "prop-types";
 import Box from "@mui/material/Box";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TablePagination from "@mui/material/TablePagination";
-import TableRow from "@mui/material/TableRow";
-import TableSortLabel from "@mui/material/TableSortLabel";
-import Paper from "@mui/material/Paper";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import { visuallyHidden } from "@mui/utils";
 import Button from "@mui/material/Button";
 
 import Modal from "@mui/material/Modal";
@@ -21,62 +7,86 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 
 export default function NotifDates(props) {
-  <Modal open={modalOpen}>
-    <Box
-      sx={{
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "30%",
-        height: "27.5%",
-        bgcolor: "background.paper",
-        padding: "2rem",
-        gap: "1rem",
-        alignItems: "center",
-      }}
-    >
-      <h2>Notification Days</h2>
-      <Typography
-        style={{
-          width: "90%",
+  const [days, setDays] = React.useState(0);
+
+  const handleSetNotifDate = (event) => {
+    setDays(event.target.value);
+  };
+
+  return (
+    <Modal open={props.modalOpen}>
+      <Box
+        sx={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "30%",
+          height: "32.5%",
+          bgcolor: "background.paper",
+          padding: "2rem",
+          gap: "1rem",
+          alignItems: "center",
         }}
       >
-        Please input the number of days you would like to be notified prior to
-        the expiry date of the product.
-      </Typography>
-      <TextField
-        label="Number of Days"
-        type="number"
-        variant="filled"
-        slotProps={{
-          inputLabel: {
-            shrink: true,
-          },
-        }}
-        style={{
-          width: "90%",
-        }}
-      />
-      <Button
-        variant="outlined"
-        style={{
-          width: "90%",
-        }}
-      >
-        Open modal
-      </Button>
-      <Button
-        variant="outlined"
-        style={{
-          width: "90%",
-        }}
-        onClick={handleModalClose}
-      >
-        Cancel
-      </Button>
-    </Box>
-  </Modal>;
+        <h2>Notification Days</h2>
+        <Typography
+          style={{
+            width: "90%",
+          }}
+        >
+          Please input the number of days you would like to be notified prior to
+          the expiry date of the product.
+        </Typography>
+        <Typography
+          style={{
+            width: "90%",
+          }}
+        >
+          Fruit Type: {props.row.fruitType}
+          <br />
+          Image Id: {props.row.imageId}
+          <br />
+          Purchase Date: {props.row.purchaseDate}
+        </Typography>
+        <TextField
+          label="Number of Days"
+          type="number"
+          variant="filled"
+          onChange={handleSetNotifDate}
+          slotProps={{
+            inputLabel: {
+              shrink: true,
+            },
+          }}
+          style={{
+            width: "90%",
+          }}
+        />
+        <Button
+          variant="outlined"
+          onClick={() => {
+            props.changeNotifDate(props.row.imageId, days);
+            props.modalClose();
+          }}
+          style={{
+            width: "90%",
+          }}
+        >
+          Submit
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={props.modalClose}
+          style={{
+            width: "90%",
+          }}
+        >
+          Cancel
+        </Button>
+      </Box>
+    </Modal>
+  );
 }

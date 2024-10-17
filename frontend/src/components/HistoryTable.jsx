@@ -16,8 +16,8 @@ import Switch from "@mui/material/Switch";
 import { visuallyHidden } from "@mui/utils";
 import Button from "@mui/material/Button";
 
-import Modal from "@mui/material/Modal";
-import Typography from "@mui/material/Typography";
+import NotifDates from "./NotifDates";
+import AlertTable from "./AlertTable";
 
 function EnhancedTableHead(props) {
   const { order, orderBy, onRequestSort } = props;
@@ -27,8 +27,8 @@ function EnhancedTableHead(props) {
 
   const headCells = [
     {
-      id: "seq",
-      label: "No.",
+      id: "imageId",
+      label: "Image ID",
     },
     {
       id: "fruitType",
@@ -62,15 +62,14 @@ function EnhancedTableHead(props) {
       id: "consumeDate",
       label: "ConsumeDate",
     },
-    {
-      id: "action",
-      label: "Action",
-    },
   ];
 
   return (
     <TableHead>
       <TableRow>
+        <TableCell align="center" padding="normal">
+          No.
+        </TableCell>
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
@@ -92,6 +91,9 @@ function EnhancedTableHead(props) {
             </TableSortLabel>
           </TableCell>
         ))}
+        <TableCell align="center" padding="normal">
+          Action
+        </TableCell>
       </TableRow>
     </TableHead>
   );
@@ -107,17 +109,18 @@ EnhancedTableHead.propTypes = {
 export default function EnhancedTable(props) {
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [rows, setRows] = React.useState([]);
+  const [alertData, setAlertData] = React.useState([]);
 
   const [modalOpen, setModalOpen] = React.useState(false);
-  const [alertOpen, setAlertOpen] = React.useState(true);
-  const [showAlert, setShowAlert] = React.useState(false);
+  const [modalRow, setModalRow] = React.useState({});
+  const [alertOpen, setAlertOpen] = React.useState(false);
 
   React.useEffect(() => {
     setRows(props.historyData);
+    setAlertData(props.alertContent);
   }, [props.historyData]);
-  console.log(rows);
+  //console.log(rows);
 
   const handleRequestSort = (event, property) => {
     const isAsc = props.orderBy === property && props.order === "asc";
@@ -130,7 +133,7 @@ export default function EnhancedTable(props) {
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    props.setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
@@ -140,51 +143,32 @@ export default function EnhancedTable(props) {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+    page > 0 ? Math.max(0, (1 + page) * props.rowsPerPage - rows.length) : 0;
 
   const viewDetails = () => {};
 
-  const handleModalOpen = () => setModalOpen(true);
+  const handleModalOpen = (row) => {
+    setModalRow(row);
+    setModalOpen(true);
+  };
+
   const handleModalClose = () => setModalOpen(false);
+  const handleAlertOpen = () => setAlertOpen(true);
+  const handleAlertClose = () => setAlertOpen(false);
 
   return (
     <Box sx={{ width: "90%" }}>
-      <Modal open={showAlert}>
-        <Box
-          sx={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "60%",
-            height: "27.5%",
-            bgcolor: "background.paper",
-            padding: "2rem",
-            gap: "1rem",
-            alignItems: "center",
-          }}
-        >
-          <h2>Notification</h2>
-          <Typography
-            style={{
-              width: "90%",
-            }}
-          >
-            The following fresh products will expire shortly.
-          </Typography>
-
-          <Button
-            variant="outlined"
-            style={{
-              width: "90%",
-            }}
-          >
-            Close
-          </Button>
-        </Box>
-      </Modal>
+      <NotifDates
+        modalOpen={modalOpen}
+        modalClose={handleModalClose}
+        row={modalRow}
+        changeNotifDate={props.changeNotifDate}
+      />
+      <AlertTable
+        alertOpen={alertOpen}
+        alertClose={handleAlertClose}
+        alertData={alertData}
+      />
 
       <div
         style={{
@@ -209,7 +193,7 @@ export default function EnhancedTable(props) {
             width: "calc(100% - 15rem - 10rem)",
           }}
         ></div>
-        {alertOpen ? (
+        {alertData.length > 0 ? (
           <Button
             //variant="outlined"
             style={{
@@ -218,6 +202,7 @@ export default function EnhancedTable(props) {
               backgroundColor: "#fc9b9d",
               color: "black",
             }}
+            onClick={() => handleAlertOpen()}
           >
             Open Alert
           </Button>
@@ -238,16 +223,12 @@ export default function EnhancedTable(props) {
               rowCount={rows.length}
             />
             <TableBody>
-              {rows.map((row) => {
+              {rows.map((row, idx) => {
                 return (
-                  <TableRow
-                    hover
-                    //role="checkbox"
-                    tabIndex={-1}
-                    key={row.seq}
-                  >
-                    <TableCell align="left">{row.seq}</TableCell>
-                    <TableCell align="left">{row.fruitType}</TableCell>
+                  <TableRow hover tabIndex={-1} key={row.imageId}>
+                    <TableCell align="center">{idx + 1}</TableCell>
+                    <TableCell align="center">{row.imageId}</TableCell>
+                    <TableCell align="center">{row.fruitType}</TableCell>
                     <TableCell align="center">{row.uploadTime}</TableCell>
                     <TableCell align="center">{row.humidity}</TableCell>
                     <TableCell align="center">{row.temperature}</TableCell>
@@ -269,8 +250,11 @@ export default function EnhancedTable(props) {
                       >
                         {row.consumed ? <>Un-consume</> : <>Consume</>}
                       </Button>
-                      <Button variant="outlined" onClick={handleModalOpen}>
-                        Open modal
+                      <Button
+                        variant="outlined"
+                        onClick={() => handleModalOpen(row)}
+                      >
+                        Update Notif
                       </Button>
                       <Button
                         variant="outlined"
@@ -298,7 +282,7 @@ export default function EnhancedTable(props) {
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
           count={rows.length}
-          rowsPerPage={rowsPerPage}
+          rowsPerPage={props.rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}

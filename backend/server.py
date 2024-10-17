@@ -312,7 +312,7 @@ def get_user_records():
     
     order_with = None
     match query["sort"][0]:
-        case "imageid": order_with = "pid"
+        case "imageId": order_with = "pid"
         case "fruitType": order_with = "fruit"
         case "uploadTime": order_with = "upload_date"
         case "humidity": order_with = "humidity"
@@ -330,16 +330,13 @@ def get_user_records():
 
     offset = (int(query["page"][0])-1)*int(query["size"][0])
     filters = filters.offset(offset).limit(int(query["size"][0]))
-    
 
-    counter = 1
     result = []
     for image in filters.all():
         # Convert prediction(integer days) to a date
         prediction = image.upload_date + timedelta(days=image.prediction)
 
         result.append({
-            "seq": counter,
             "imageId": image.pid,
             "fruitType": image.fruit,
             "uploadTime": image.upload_date,
@@ -351,8 +348,6 @@ def get_user_records():
             "consumed": image.consumed,
             "consumedDate": image.consume_date
             })
-
-        counter += 1
 
     return result
 
