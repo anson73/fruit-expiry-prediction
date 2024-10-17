@@ -417,6 +417,44 @@ def delete():
 
     return "Image Deleted", 200
 
+@app.route('/history/alert', methods=['GET'])
+def alert():
+    """
+    Route to get nearly expired products from database for history page popup
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/alert
+
+    uid = 0 # User id hardcoded.
+
+    # Get all not consumed images
+    non_consumed = images.query.filter_by(id=uid, consumed=False)
+
+    counter = 1
+    result = []
+    for image in non_consumed.all():
+        # Convert prediction(integer days) to a date
+        prediction = image.upload_date + timedelta(days=image.prediction)
+
+        # If [today's date] is within [[expiry date] minus [notification days]] and [expiry date]
+        if (prediction - timedelta(days=image.notification_days)) <= datetime.now() <= prediction:
+            result.append({
+                "seq": counter,
+                "imageId": image.pid,
+                "fruitType": image.fruit,
+                "uploadTime": image.upload_date,
+                "humidity": image.humidity,
+                "temperature": image.temperature,
+                "purchaseDate": image.purchase_date,
+                "expiryDate": prediction,
+                "daysNotify": image.notification_days,
+                })
+
+        counter += 1
+
+    return result
+
 @app.route('/history', methods=['POST'])
 def add_feedback():
     """
