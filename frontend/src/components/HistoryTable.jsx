@@ -107,7 +107,6 @@ EnhancedTableHead.propTypes = {
 };
 
 export default function EnhancedTable(props) {
-  const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
   const [rows, setRows] = React.useState([]);
   const [alertData, setAlertData] = React.useState([]);
@@ -129,12 +128,12 @@ export default function EnhancedTable(props) {
   };
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage);
+    props.setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (event) => {
     props.setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    props.setPage(0);
   };
 
   const handleChangeDense = (event) => {
@@ -143,7 +142,9 @@ export default function EnhancedTable(props) {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * props.rowsPerPage - rows.length) : 0;
+    props.page > 0
+      ? Math.max(0, (1 + props.page) * props.rowsPerPage - rows.length)
+      : 0;
 
   const viewDetails = () => {};
 
@@ -226,7 +227,9 @@ export default function EnhancedTable(props) {
               {rows.map((row, idx) => {
                 return (
                   <TableRow hover tabIndex={-1} key={row.imageId}>
-                    <TableCell align="center">{idx + 1}</TableCell>
+                    <TableCell align="center">
+                      {idx + 1 + props.rowsPerPage * props.page}
+                    </TableCell>
                     <TableCell align="center">{row.imageId}</TableCell>
                     <TableCell align="center">{row.fruitType}</TableCell>
                     <TableCell align="center">{row.uploadTime}</TableCell>
@@ -281,9 +284,9 @@ export default function EnhancedTable(props) {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={rows.length}
+          count={props.totalItem}
           rowsPerPage={props.rowsPerPage}
-          page={page}
+          page={props.page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />

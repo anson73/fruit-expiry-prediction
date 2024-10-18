@@ -11,6 +11,8 @@ const History = () => {
   const [updateData, setUpdateData] = React.useState(false);
   const [hideConsumed, setHideConsumed] = React.useState(false);
   const [alertContent, setAlertContent] = React.useState([]);
+  const [totalItem, setTotalItem] = React.useState(0);
+  const [page, setPage] = React.useState(0);
 
   React.useEffect(() => {
     async function getHistoryData() {
@@ -19,7 +21,9 @@ const History = () => {
         ? (hideConsumedVariable = "hide")
         : (hideConsumedVariable = "unhide");
       const response = await fetch(
-        `http://localhost:5005/history?filter=${hideConsumedVariable}&page=1&size=${rowsPerPage}&sort=${orderBy}&order=${order}`,
+        `http://localhost:5005/history?filter=${hideConsumedVariable}&page=${
+          page + 1
+        }&size=${rowsPerPage}&sort=${orderBy}&order=${order}`,
         {
           method: "GET",
           headers: {
@@ -28,7 +32,8 @@ const History = () => {
         }
       );
       const data = await response.json();
-      setHistory(data);
+      setHistory(data[0]);
+      setTotalItem(data[1]);
       //console.log(data);
       setUpdateData(false);
     }
@@ -42,12 +47,13 @@ const History = () => {
     }
     getHistoryData();
     getAlertData();
-  }, [order, orderBy, updateData, hideConsumed, rowsPerPage]);
+  }, [order, orderBy, updateData, hideConsumed, rowsPerPage, page]);
 
   //console.log(history);
   console.log(alertContent);
 
   const controlHideConsumed = () => {
+    setPage(0);
     hideConsumed ? setHideConsumed(false) : setHideConsumed(true);
   };
 
@@ -139,6 +145,9 @@ const History = () => {
           rowsPerPage={rowsPerPage}
           setRowsPerPage={setRowsPerPage}
           alertContent={alertContent}
+          totalItem={totalItem}
+          page={page}
+          setPage={setPage}
         />
       </div>
     </div>

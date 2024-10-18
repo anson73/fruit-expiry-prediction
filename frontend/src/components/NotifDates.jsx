@@ -24,7 +24,6 @@ export default function NotifDates(props) {
           left: "50%",
           transform: "translate(-50%, -50%)",
           width: "30%",
-          height: "32.5%",
           bgcolor: "background.paper",
           padding: "2rem",
           gap: "1rem",
