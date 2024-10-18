@@ -309,6 +309,7 @@ def get_user_records():
     else:
         filters = images.query.filter_by(id=uid)
 
+    count = filters.count()
     
     order_with = None
     match query["sort"][0]:
@@ -349,7 +350,7 @@ def get_user_records():
             "consumedDate": image.consume_date
             })
 
-    return result
+    return jsonify(result, count)
 
 @app.route('/history/consume', methods=['POST'])
 def consume():
