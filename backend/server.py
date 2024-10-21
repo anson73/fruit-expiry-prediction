@@ -343,14 +343,18 @@ def get_user_records():
     Route to get all images/videos posted by the user
     return: List of Dictionaries
     """
-    # Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
+    # Previous Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
+    # Updated Example: /history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc
     query = request.args.to_dict(flat=False)
 
     uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
-    if query["filter"][0] == "hide": 
+    if query["consumed"][0] == "hide": 
         filters = images.query.filter_by(id=uid, consumed=False)
     else:
         filters = images.query.filter_by(id=uid)
+
+    if query["disposed"][0] == "hide": 
+        filters = filters.filter_by(id=uid, disposed=False)
 
     count = filters.count()
     
