@@ -4,6 +4,7 @@ from sqlalchemy import text, desc
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
 from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 import uuid
 import shutil
 import os
@@ -61,7 +62,8 @@ class images(db.Model):
     feedback = db.Column(db.Integer)
     upload_date = db.Column(db.DateTime, default=datetime.now(), nullable = False)
     purchase_date = db.Column(db.DateTime)
-    consume_date = db.Column(db.DateTime)
+    consumed = db.Column(db.Boolean, default=False)
+    consume_date = db.Column(db.DateTime, default=None)
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
