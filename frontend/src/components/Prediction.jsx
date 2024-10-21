@@ -57,7 +57,7 @@ const Prediction = () => {
     console.log('Predict')
   }
   return (
-    <Box sx={{ padding: 4, margin: 10}}>
+    <Box sx={{ padding: 4, margin: 10 }}>
       <Typography variant="h3" align="center" gutterBottom>
         Predication
       </Typography>
