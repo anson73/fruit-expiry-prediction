@@ -63,13 +63,15 @@ class images(db.Model):
     feedback = db.Column(db.Integer)
     upload_date = db.Column(db.DateTime, default=datetime.now(), nullable = False)
     purchase_date = db.Column(db.DateTime)
-    consume_date = db.Column(db.DateTime)
+    consumed = db.Column(db.Boolean, default=False)
+    consume_date = db.Column(db.DateTime, default=None)
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
     path = db.Column(db.String(100))
-    consumed = db.Column(db.Boolean)
     notification_days = db.Column(db.Integer, default=0)
+    disposed = db.Column(db.Boolean, default=False)
+    dispose_date = db.Column(db.DateTime, default=None)
 
     def __repr__(self):
         return '<PID %r>' % self.pid
@@ -194,45 +196,45 @@ def add_content():
     # Test: Add entry to image database. 
     
     image = images(pid=0, id=0, prediction=5, feedback=3,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, fruit="Apple", 
-                   temperature="24", humidity="40", path="backend/content", notification_days = 1, consumed=False)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=False, consume_date = None, fruit="Apple", 
+                   temperature="24", humidity="40", path="backend/content", notification_days = 1, disposed=True, dispose_date = datetime.now())
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=1, id=0, prediction=3, feedback=4,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, fruit="Orange", 
-                   temperature="40", humidity="10", path="backend/content", notification_days = 3, consumed=False)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=False, consume_date = None, fruit="Orange", 
+                   temperature="40", humidity="10", path="backend/content", notification_days = 3, disposed=True, dispose_date = datetime.now())
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=2, id=0, prediction=6, feedback=9,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), fruit="Grape", 
-                   temperature="15", humidity="33", path="backend/content", notification_days = 8, consumed=True)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=True, consume_date = datetime.now(), fruit="Grape", 
+                   temperature="15", humidity="33", path="backend/content", notification_days = 8, disposed=False, dispose_date = None)
     db.session.add(image)
     db.session.commit()
 
     # This test has a user id of 1, so it should not show in the history page
     image = images(pid=3, id=1, prediction=6, feedback=9,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), fruit="Grape", 
-                   temperature="15", humidity="33", path="backend/content", notification_days = 4, consumed=True)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=True, consume_date = datetime.now(), fruit="Grape", 
+                   temperature="15", humidity="33", path="backend/content", notification_days = 4, disposed=False, dispose_date = None)
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=4, id=0, prediction=8, feedback=22,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), fruit="Apple", 
-                   temperature="3", humidity="40", path="backend/content", notification_days = 2, consumed=True)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=True, consume_date = datetime.now(), fruit="Apple", 
+                   temperature="3", humidity="40", path="backend/content", notification_days = 2, disposed=False, dispose_date = None)
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=5, id=0, prediction=1, feedback=2,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, fruit="Bananna", 
-                   temperature="6", humidity="30", path="backend/content", notification_days = 10, consumed=False)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=False, consume_date = None, fruit="Bananna", 
+                   temperature="6", humidity="30", path="backend/content", notification_days = 10, disposed=False, dispose_date = None)
     db.session.add(image)
     db.session.commit()
 
     image = images(pid=6, id=0, prediction=6, feedback=6,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, fruit="Mango", 
-                   temperature="6", humidity="30", path="backend/content", consumed=False)
+                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=False, consume_date = None, fruit="Mango", 
+                   temperature="6", humidity="30", path="backend/content", disposed=False, dispose_date = None)
     db.session.add(image)
     db.session.commit()
 
@@ -322,6 +324,7 @@ def get_user_records():
         case "expiryDate": order_with = "prediction"
         case "daysNotify": order_with = "notification_days"
         case "consumeDate": order_with = "consume_date"
+        case "disposeDate": order_with = "dispose_date"
     
     if query["order"][0] == "desc": 
         filters = filters.order_by(desc(text(order_with)))
@@ -347,7 +350,9 @@ def get_user_records():
             "expiryDate": prediction,
             "daysNotify": image.notification_days,
             "consumed": image.consumed,
-            "consumedDate": image.consume_date
+            "consumedDate": image.consume_date,
+            "disposed": image.disposed,
+            "disposedDate": image.dispose_date
             })
 
     return jsonify(result, count)
@@ -366,6 +371,10 @@ def consume():
     if not consume_image:
         return "Image id not found", 404
     
+    # Check if image is already disposed
+    if consume_image.disposed:
+        return "Image already disposed. Cannot consume", 409
+    
     if (consume_image.consumed):
         consume_image.consume_date = None
     else: 
@@ -374,6 +383,87 @@ def consume():
     db.session.commit()
 
     return "Image consumption status changed", 200
+
+@app.route('/history/consumedate', methods=['POST'])
+def consume_date():
+    """
+    Route to directly change the consumed date of the image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/consumedate?imageid=4&days=4
+
+    image_id = int(request.args.get('imageid'))
+    consume_image = images.query.filter_by(pid=image_id).first()
+    if not consume_image:
+        return "Image id not found", 404
+
+    # Check if image is already disposed
+    if consume_image.disposed:
+        return "Image already disposed. Cannot consume", 409
+    
+    # Change the consumed date to todays date minus days
+    days_ago = int(request.args.get('days'))
+    consume_image.consume_date = datetime.now() - timedelta(days_ago)
+
+    consume_image.consumed = True
+    db.session.commit()
+
+    return "Image consumption date changed", 200
+
+@app.route('/history/dispose', methods=['POST'])
+def dispose():
+    """
+    Route to change the disposed status of an image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/dispose?imageid=1
+
+    image_id = int(request.args.get('imageid'))
+    dispose_image = images.query.filter_by(pid=image_id).first()
+    if not dispose_image:
+        return "Image id not found", 404
+
+    # Check if image is already consumed
+    if dispose_image.consumed:
+        return "Image already consumed. Cannot dispose", 409
+    
+    if (dispose_image.disposed):
+        dispose_image.dispose_date = None
+    else: 
+        dispose_image.dispose_date = datetime.now()
+    dispose_image.disposed = not dispose_image.disposed
+    db.session.commit()
+
+    return "Image disposed status changed", 200
+
+@app.route('/history/disposedate', methods=['POST'])
+def dispose_date():
+    """
+    Route to directly change the disposed date of the image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/disposedate?imageid=4&days=4
+
+    image_id = int(request.args.get('imageid'))
+    dispose_image = images.query.filter_by(pid=image_id).first()
+    if not dispose_image:
+        return "Image id not found", 404
+
+    # Check if image is already consumed
+    if dispose_image.consumed:
+        return "Image already consumed. Cannot dispose", 409
+    
+    # Change the consumed date to todays date minus days
+    days_ago = int(request.args.get('days'))
+    dispose_image.dispose_date = datetime.now() - timedelta(days_ago)
+
+    dispose_image.disposed = True
+    db.session.commit()
+
+    return "Image disposed date changed", 200
 
 @app.route('/history/notification', methods=['POST'])
 def notification_days():
