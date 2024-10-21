@@ -16,9 +16,9 @@ app = Flask(__name__)
 # Add databse
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# add secret key
+# add secret key TODO CHANGE THE KEY
 app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
-app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 24}
+app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 5}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
 app.config['DEFAULT_ROLES_DISABLED'] = True
@@ -34,7 +34,6 @@ class users(db.Model):
     username = db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
-    alert_day = db.Column(db.Integer)
     pfp_id = db.Column(db.Integer)
     remarks = db.Column(db.String(200))
 
@@ -56,7 +55,7 @@ class users(db.Model):
 
 
 class images(db.Model):
-    pid = db.Column(db.Integer, primary_key = True)
+    pid = db.Column(db.String(), primary_key = True)
     id = db.Column("id", db.ForeignKey(users.id))
     prediction = db.Column(db.Integer)
     feedback = db.Column(db.Integer)
@@ -66,8 +65,9 @@ class images(db.Model):
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
-    path = db.Column(db.String(100))
     consumed = db.Column(db.Boolean)
+    alert_day = db.Column(db.Integer)
+    data = db.Column(db.LargeBinary)
 
     def __repr__(self):
         return '<PID %r>' % self.pid
@@ -131,7 +131,7 @@ def user_register():
 
 
 
-    user = users(id=user_id, username=user_name, email=user_email, password=user_password, alert_day=None, pfp_id=None, remarks=None)
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, pfp_id=None, remarks=None)
     db.session.add(user)
     db.session.commit()
     ret = {'access_token': guard.encode_jwt_token(user)}
@@ -170,13 +170,12 @@ def view_profile():
     id = current_user_id()
     if request.method == 'GET':
         user = users.query.get_or_404(id)
-        return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
+        return {"email":user.email, "remarks":user.remarks}, 200
     else:
         profile_input = request.json
         user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
-        alert_day = profile_input.get("day")
         remarks = profile_input.get("remarks")
 
         user = users.query.get_or_404(id)
@@ -190,14 +189,13 @@ def view_profile():
             user.password = new_password
         if user.remarks != remarks:
             user.remarks = remarks
-        user.alert_day = alert_day
         db.session.commit()
 
-        return {"new_password": user.password, "new_remark": user.remarks, "alert_day": user.alert_day},200
+        return {"new_password": user.password, "new_remark": user.remarks},200
 
 
 @app.route('/logout', methods=['GET','POST'])
-
+@auth_required
 def user_logout():
     """
     Route for user logout
@@ -212,20 +210,18 @@ def user_logout():
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
 @app.route('/prediction', methods=['POST'])
-
+@auth_required
 def add_content():
     """
     Route to add a new photo/video
     return: Prediction Date
     """
-    """
-    content_data = request.json
-    file = content_data.get("file")
-    fruit_type = content_data.get("fruittype")
-    location = content_data.get("location")
-    refrigeration = content_data.get("refrigeration")
-    purchase_date = content_data.get("purchasedate")
-
+    
+    file = request.files["file"]
+    
+    fruit_type = request.form.get("fruittype")
+    location = request.form.get("location")
+    
     # Generate new image id
     image_id = str(uuid.uuid4())
     # Check if the uid is already in the database
@@ -233,43 +229,36 @@ def add_content():
     while pid_query is not None:
         image_id = str(uuid.uuid4())
         pid_query = images.query.filter_by(pid=image_id).first()
-
-    # Save image/video to content folder
-    file_name, file_type = os.path.splitext(file)
-    content_path = contentdb + str(image_id) + file_type
-    shutil.copy(file, content_path)
-
+    
+    
     # Send content to AI
     temperature = None
-    if refrigeration: temperature = refrigeration
-    else: temperature = get_temperature(location)
+    temperature = get_temperature(location)
 
     humidity = get_humidity(location)
     predicted_expiry = None # Add connection to AI here (update database when reply from AI and let the user refresh on front end)
 
     # Add image metadata to database
-    image = images(pid=image_id, prediction=predicted_expiry, feedback=None,
-                   upload_date=get_current_date(location), fruit=fruit_type,
-                   temperature=temperature, humidity=humidity, path=content_path,
-                   consumed=False, id=current_user.id)
+
+    image = images(pid = image_id,
+    id = current_user_id(), 
+    prediction = None,
+    feedback = None,
+    upload_date = datetime.now(),
+    purchase_date = datetime.now(),
+    consume_date = datetime.now(),
+    fruit = fruit_type,
+    temperature = temperature,
+    humidity =  humidity,
+    consumed = None,
+    alert_day= None,
+    data = file.read())
+
     db.session.add(image)
     db.session.commit()
 
-    return jsonify({"prediction":predicted_expiry})
-    
-#----------------------------------------------------------------------------
-    image = images(pid = 12,id = current_user.id, prediction = None, feedback = None,
-    upload_date = datetime.now(), purchase_date = None,
-    consume_date = None,
-    fruit = None,
-    temperature = None,
-    humidity =  None,
-    path = None,
-    consumed = None)
-    db.session.add(image)
-    db.session.commit()
-"""
-    return "created", 200
+    return f"Uploaded {file.filename}",200
+
 
 
 @app.route('/history', methods=['GET'])
