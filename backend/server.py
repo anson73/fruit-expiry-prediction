@@ -1,13 +1,14 @@
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text, desc
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
-from io import BytesIO
 import shutil
 import os
 from weather import get_temperature, get_humidity, get_current_date
+
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
@@ -54,7 +55,7 @@ class users(db.Model):
 
 
 class images(db.Model):
-    pid = db.Column(db.String(), primary_key = True)
+    pid = db.Column(db.Integer, primary_key = True)
     id = db.Column("id", db.ForeignKey(users.id))
     prediction = db.Column(db.Integer)
     feedback = db.Column(db.Integer)
@@ -64,8 +65,10 @@ class images(db.Model):
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
-    consumed = db.Column(db.Boolean)
-    alert_day = db.Column(db.Integer)
+    consumed = db.Column(db.Boolean, default=False)
+    notification_days = db.Column(db.Integer, default=0)
+    disposed = db.Column(db.Boolean, default=False)
+    dispose_date = db.Column(db.DateTime, default=None)
     data = db.Column(db.LargeBinary)
 
     def __repr__(self):
@@ -270,7 +273,7 @@ def add_content():
         Authorization : Bearer <INSERT JWT TOKEN>
 
     Args:
-        file(): Password of the user
+        file(file): Password of the user
         newpassword(string): New password of the user
         newpasswordconfirmation(string): Repeat of user's new password for confirmation
         remarks(string): Remarks on the users profile
@@ -295,11 +298,11 @@ def add_content():
         return "Upload png or jpeg image only", 400
     
     # Generate new image id
-    image_id = str(uuid.uuid4())
+    image_id = uuid.uuid4().int & (1<<32) -1
     # Check if the uid is already in the database
     pid_query = images.query.filter_by(pid=image_id).first()
     while pid_query is not None:
-        image_id = str(uuid.uuid4())
+        image_id = uuid.uuid4().int & (1<<32) -1
         pid_query = images.query.filter_by(pid=image_id).first()
     
     
@@ -317,13 +320,12 @@ def add_content():
     prediction = None,
     feedback = None,
     upload_date = datetime.now(),
-    purchase_date = datetime.now(),
-    consume_date = datetime.now(),
+    purchase_date = None,
+    consume_date = None,
     fruit = fruit_type.lower(),
     temperature = temperature,
     humidity =  humidity,
-    consumed = None,
-    alert_day= None,
+    consumed = False,
     data = file.read())
 
     db.session.add(image)
@@ -334,38 +336,257 @@ def add_content():
 
 
 @app.route('/history', methods=['GET'])
-@auth_required
 def get_user_records():
     """
     Route to get all images/videos posted by the user
-
-    Header:
-        Requires token in header in format:
-        Authorization : Bearer <INSERT JWT TOKEN>
-
-    return:
+    return: List of Dictionaries
     """
-    if isTokenInBlacklist(guard.read_token_from_header()):
-        return "This user is logged out", 401
-    # Get all history
+    # Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
+    query = request.args.to_dict(flat=False)
 
-    # image_query = images.query.filter_by(pid=pid).first()
+    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
+    if query["filter"][0] == "hide": 
+        filters = images.query.filter_by(id=uid, consumed=False)
+    else:
+        filters = images.query.filter_by(id=uid)
 
-    # View button (Return path to image in content folder)
-    # image_path = image_query.path
+    count = filters.count()
+    
+    order_with = None
+    match query["sort"][0]:
+        case "imageId": order_with = "pid"
+        case "fruitType": order_with = "fruit"
+        case "uploadTime": order_with = "upload_date"
+        case "humidity": order_with = "humidity"
+        case "temperature": order_with = "temperature"
+        case "purchaseDate": order_with = "purchase_date"
+        case "expiryDate": order_with = "prediction"
+        case "daysNotify": order_with = "notification_days"
+        case "consumeDate": order_with = "consume_date"
+        case "disposeDate": order_with = "dispose_date"
+    
+    if query["order"][0] == "desc": 
+        filters = filters.order_by(desc(text(order_with)))
+    else: 
+        filters = filters.order_by(text(order_with))
+    
 
-    # Consume/Unconsume button
-    # image_query.consumed = not image_query.consumed
-    # db.session.commit()
+    offset = (int(query["page"][0])-1)*int(query["size"][0])
+    filters = filters.offset(offset).limit(int(query["size"][0]))
 
+    result = []
+    for image in filters.all():
+        # Convert prediction(integer days) to a date
+        if image.prediction is not None:
+            prediction = image.upload_date + timedelta(days=image.prediction)
+        else: 
+            prediction = None
 
-    # Delete button
-    # db.session.delete(image_query)
-    # db.session.commit()
+        result.append({
+            "imageId": image.pid,
+            "fruitType": image.fruit,
+            "uploadTime": image.upload_date,
+            "humidity": image.humidity,
+            "temperature": image.temperature,
+            "purchaseDate": image.purchase_date,
+            "expiryDate": prediction,
+            "daysNotify": image.notification_days,
+            "consumed": image.consumed,
+            "consumedDate": image.consume_date,
+            "disposed": image.disposed,
+            "disposedDate": image.dispose_date
+            })
+
+    return jsonify(result, count)
+
+@app.route('/history/consume', methods=['POST'])
+def consume():
+    """
+    Route to change the consumed status of an image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/consume?imageid=1
+
+    image_id = int(request.args.get('imageid'))
+    consume_image = images.query.filter_by(pid=image_id).first()
+    if not consume_image:
+        return "Image id not found", 404
+    
+    # Check if image is already disposed
+    if consume_image.disposed:
+        return "Image already disposed. Cannot consume", 409
+    
+    if (consume_image.consumed):
+        consume_image.consume_date = None
+    else: 
+        consume_image.consume_date = datetime.now()
+    consume_image.consumed = not consume_image.consumed
+    db.session.commit()
+
+    return "Image consumption status changed", 200
+
+@app.route('/history/consumedate', methods=['POST'])
+def consume_date():
+    """
+    Route to directly change the consumed date of the image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/consumedate?imageid=4&days=4
+
+    image_id = int(request.args.get('imageid'))
+    consume_image = images.query.filter_by(pid=image_id).first()
+    if not consume_image:
+        return "Image id not found", 404
+
+    # Check if image is already disposed
+    if consume_image.disposed:
+        return "Image already disposed. Cannot consume", 409
+    
+    # Change the consumed date to todays date minus days
+    days_ago = int(request.args.get('days'))
+    consume_image.consume_date = datetime.now() - timedelta(days_ago)
+
+    consume_image.consumed = True
+    db.session.commit()
+
+    return "Image consumption date changed", 200
+
+@app.route('/history/dispose', methods=['POST'])
+def dispose():
+    """
+    Route to change the disposed status of an image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/dispose?imageid=1
+
+    image_id = int(request.args.get('imageid'))
+    dispose_image = images.query.filter_by(pid=image_id).first()
+    if not dispose_image:
+        return "Image id not found", 404
+
+    # Check if image is already consumed
+    if dispose_image.consumed:
+        return "Image already consumed. Cannot dispose", 409
+    
+    if (dispose_image.disposed):
+        dispose_image.dispose_date = None
+    else: 
+        dispose_image.dispose_date = datetime.now()
+    dispose_image.disposed = not dispose_image.disposed
+    db.session.commit()
+
+    return "Image disposed status changed", 200
+
+@app.route('/history/disposedate', methods=['POST'])
+def dispose_date():
+    """
+    Route to directly change the disposed date of the image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/disposedate?imageid=4&days=4
+
+    image_id = int(request.args.get('imageid'))
+    dispose_image = images.query.filter_by(pid=image_id).first()
+    if not dispose_image:
+        return "Image id not found", 404
+
+    # Check if image is already consumed
+    if dispose_image.consumed:
+        return "Image already consumed. Cannot dispose", 409
+    
+    # Change the consumed date to todays date minus days
+    days_ago = int(request.args.get('days'))
+    dispose_image.dispose_date = datetime.now() - timedelta(days_ago)
+
+    dispose_image.disposed = True
+    db.session.commit()
+
+    return "Image disposed date changed", 200
+
+@app.route('/history/notification', methods=['POST'])
+def notification_days():
+    """
+    Route to change expiry notification days for an image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/notification?imageid=1&days=1
+
+    image_id = int(request.args.get('imageid'))
+    selected_image = images.query.filter_by(pid=image_id).first()
+    if not selected_image:
+        return "Image id not found", 404
+
+    selected_image.notification_days = int(request.args.get('days'))
+    db.session.commit()
+
+    return "Notification days changed", 200
+
+@app.route('/history/delete', methods=['DELETE'])
+def delete():
+    """
+    Route to delete a selected image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/delete?imageid=1
+
+    image_id = int(request.args.get('imageid'))
+    delete_image = images.query.filter_by(pid=image_id).first()
+    if not delete_image:
+        return "Image id not found", 404
+
+    db.session.delete(delete_image)
+    db.session.commit()
+
+    return "Image Deleted", 200
+
+@app.route('/history/alert', methods=['GET'])
+def alert():
+    """
+    Route to get nearly expired products from database for history page popup
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/alert
+
+    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
+
+    # Get all not consumed images
+    non_consumed = images.query.filter_by(id=uid, consumed=False)
+
+    counter = 1
+    result = []
+    for image in non_consumed.all():
+        # Convert prediction(integer days) to a date
+        prediction = image.upload_date + timedelta(days=image.prediction)
+
+        # If [today's date] is within [[expiry date] minus [notification days]] and [expiry date]
+        if (prediction - timedelta(days=image.notification_days)) <= datetime.now() <= prediction:
+            result.append({
+                "seq": counter,
+                "imageId": image.pid,
+                "fruitType": image.fruit,
+                "uploadTime": image.upload_date,
+                "humidity": image.humidity,
+                "temperature": image.temperature,
+                "purchaseDate": image.purchase_date,
+                "expiryDate": prediction,
+                "daysNotify": image.notification_days,
+                })
+
+        counter += 1
+
+    return result
+
 
 @app.route('/image', methods=['GET'])
 def get_image():
-    image = images.query.filter_by(pid="3173d035-744c-41be-882a-be34d4bcebc3").first()
+    image = images.query.filter_by(pid=1219339313).first()
     return image.data
 
 @app.route('/history', methods=['POST'])
