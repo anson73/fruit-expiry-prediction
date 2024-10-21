@@ -357,14 +357,14 @@ def get_user_records():
 
     return jsonify(result, count)
 
-@app.route('/history/consume', methods=['POST'])
-def consume():
+@app.route('/history/unconsume', methods=['POST'])
+def unconsume():
     """
     Route to change the consumed status of an image
     return: 200 for success, 404 if imageid not found
     """
 
-    # Example usage: /history/consume?imageid=1
+    # Example usage: /history/unconsume?imageid=1
 
     image_id = int(request.args.get('imageid'))
     consume_image = images.query.filter_by(pid=image_id).first()
@@ -373,25 +373,22 @@ def consume():
     
     # Check if image is already disposed
     if consume_image.disposed:
-        return "Image already disposed. Cannot consume", 409
+        return "Image already disposed. Cannot unconsume", 409
     
-    if (consume_image.consumed):
-        consume_image.consume_date = None
-    else: 
-        consume_image.consume_date = datetime.now()
+    consume_image.consume_date = None
     consume_image.consumed = not consume_image.consumed
     db.session.commit()
 
     return "Image consumption status changed", 200
 
-@app.route('/history/consumedate', methods=['POST'])
-def consume_date():
+@app.route('/history/consume', methods=['POST'])
+def consume():
     """
     Route to directly change the consumed date of the image
     return: 200 for success, 404 if imageid not found
     """
 
-    # Example usage: /history/consumedate?imageid=4&days=4
+    # Example usage: /history/consume?imageid=4&days=4
 
     image_id = int(request.args.get('imageid'))
     consume_image = images.query.filter_by(pid=image_id).first()
@@ -411,14 +408,14 @@ def consume_date():
 
     return "Image consumption date changed", 200
 
-@app.route('/history/dispose', methods=['POST'])
-def dispose():
+@app.route('/history/undispose', methods=['POST'])
+def undispose():
     """
     Route to change the disposed status of an image
     return: 200 for success, 404 if imageid not found
     """
 
-    # Example usage: /history/dispose?imageid=1
+    # Example usage: /history/undispose?imageid=1
 
     image_id = int(request.args.get('imageid'))
     dispose_image = images.query.filter_by(pid=image_id).first()
@@ -427,25 +424,22 @@ def dispose():
 
     # Check if image is already consumed
     if dispose_image.consumed:
-        return "Image already consumed. Cannot dispose", 409
+        return "Image already consumed. Cannot undispose", 409
     
-    if (dispose_image.disposed):
-        dispose_image.dispose_date = None
-    else: 
-        dispose_image.dispose_date = datetime.now()
+    dispose_image.dispose_date = None
     dispose_image.disposed = not dispose_image.disposed
     db.session.commit()
 
     return "Image disposed status changed", 200
 
-@app.route('/history/disposedate', methods=['POST'])
-def dispose_date():
+@app.route('/history/dispose', methods=['POST'])
+def dispose():
     """
     Route to directly change the disposed date of the image
     return: 200 for success, 404 if imageid not found
     """
 
-    # Example usage: /history/disposedate?imageid=4&days=4
+    # Example usage: /history/dispose?imageid=4&days=4
 
     image_id = int(request.args.get('imageid'))
     dispose_image = images.query.filter_by(pid=image_id).first()
@@ -515,7 +509,7 @@ def alert():
     uid = 0 # User id hardcoded.
 
     # Get all not consumed images
-    non_consumed = images.query.filter_by(id=uid, consumed=False)
+    non_consumed = images.query.filter_by(id=uid, consumed=False, disposed=False)
 
     counter = 1
     result = []

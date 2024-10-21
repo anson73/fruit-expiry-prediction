@@ -10,6 +10,7 @@ const History = () => {
   const [orderBy, setOrderBy] = React.useState("fruitType");
   const [updateData, setUpdateData] = React.useState(false);
   const [hideConsumed, setHideConsumed] = React.useState(false);
+  const [hideDisposed, setHideDisposed] = React.useState(false);
   const [alertContent, setAlertContent] = React.useState([]);
   const [totalItem, setTotalItem] = React.useState(0);
   const [page, setPage] = React.useState(0);
@@ -47,7 +48,15 @@ const History = () => {
     }
     getHistoryData();
     getAlertData();
-  }, [order, orderBy, updateData, hideConsumed, rowsPerPage, page]);
+  }, [
+    order,
+    orderBy,
+    updateData,
+    hideConsumed,
+    hideDisposed,
+    rowsPerPage,
+    page,
+  ]);
 
   //console.log(history);
   console.log(alertContent);
@@ -57,9 +66,29 @@ const History = () => {
     hideConsumed ? setHideConsumed(false) : setHideConsumed(true);
   };
 
-  const consumeProduct = async (imageId) => {
+  const controlHideDisposed = () => {
+    setPage(0);
+    hideDisposed ? setHideDisposed(false) : setHideDisposed(true);
+  };
+
+  const unconsumeProduct = async (imageId) => {
     const response = await fetch(
-      `http://localhost:5005/history/consume?imageid=${imageId}`,
+      `http://localhost:5005/history/unconsume?imageid=${imageId}`,
+      {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+      }
+    );
+    //console.log(response);
+    if (response.status !== 200) {
+      console.log("Error! Invalid Unconsumption!");
+    }
+    setUpdateData(true);
+  };
+
+  const consumeProduct = async (imageId, days) => {
+    const response = await fetch(
+      `http://localhost:5005/history/consume?imageid=${imageId}&days=${days}`,
       {
         method: "POST",
         headers: { "Content-type": "application/json" },
@@ -68,6 +97,36 @@ const History = () => {
     //console.log(response);
     if (response.status !== 200) {
       console.log("Error! Invalid Consumption!");
+    }
+    setUpdateData(true);
+  };
+
+  const undisposeProduct = async (imageId) => {
+    const response = await fetch(
+      `http://localhost:5005/history/undispose?imageid=${imageId}`,
+      {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+      }
+    );
+    //console.log(response);
+    if (response.status !== 200) {
+      console.log("Error! Invalid Undisposal!");
+    }
+    setUpdateData(true);
+  };
+
+  const disposeProduct = async (imageId, days) => {
+    const response = await fetch(
+      `http://localhost:5005/history/dispose?imageid=${imageId}&days=${days}`,
+      {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+      }
+    );
+    //console.log(response);
+    if (response.status !== 200) {
+      console.log("Error! Invalid Disposal!");
     }
     setUpdateData(true);
   };
@@ -140,7 +199,11 @@ const History = () => {
           deleteProduct={deleteProduct}
           setUpdateData={setUpdateData}
           consumeProduct={consumeProduct}
+          unconsumeProduct={unconsumeProduct}
+          disposeProduct={disposeProduct}
+          undisposeProduct={undisposeProduct}
           controlHideConsumed={controlHideConsumed}
+          controlHideDisposed={controlHideDisposed}
           changeNotifDate={changeNotifDate}
           rowsPerPage={rowsPerPage}
           setRowsPerPage={setRowsPerPage}

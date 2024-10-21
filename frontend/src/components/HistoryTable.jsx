@@ -18,6 +18,8 @@ import Button from "@mui/material/Button";
 
 import NotifDates from "./NotifDates";
 import AlertTable from "./AlertTable";
+import ConsumePage from "./ConsumePage";
+import DisposalPage from "./DisposalPage";
 
 function EnhancedTableHead(props) {
   const { order, orderBy, onRequestSort } = props;
@@ -60,7 +62,11 @@ function EnhancedTableHead(props) {
     },
     {
       id: "consumeDate",
-      label: "ConsumeDate",
+      label: "Consumed Date",
+    },
+    {
+      id: "disposeDate",
+      label: "Disposed Date",
     },
   ];
 
@@ -114,6 +120,8 @@ export default function EnhancedTable(props) {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [modalRow, setModalRow] = React.useState({});
   const [alertOpen, setAlertOpen] = React.useState(false);
+  const [consumeOpen, setConsumeOpen] = React.useState(false);
+  const [disposeOpen, setDisposeOpen] = React.useState(false);
 
   React.useEffect(() => {
     setRows(props.historyData);
@@ -152,10 +160,27 @@ export default function EnhancedTable(props) {
     setModalRow(row);
     setModalOpen(true);
   };
-
   const handleModalClose = () => setModalOpen(false);
   const handleAlertOpen = () => setAlertOpen(true);
   const handleAlertClose = () => setAlertOpen(false);
+  const handleConsumeOpen = (row) => {
+    if (!row.consumed) {
+      setModalRow(row);
+      setConsumeOpen(true);
+    } else {
+      props.unconsumeProduct(row.imageId);
+    }
+  };
+  const handleConsumeClose = () => setConsumeOpen(false);
+  const handleDisposeOpen = (row) => {
+    if (!row.disposed) {
+      setModalRow(row);
+      setDisposeOpen(true);
+    } else {
+      props.undisposeProduct(row.imageId);
+    }
+  };
+  const handleDisposeClose = () => setDisposeOpen(false);
 
   return (
     <Box sx={{ width: "90%" }}>
@@ -169,6 +194,18 @@ export default function EnhancedTable(props) {
         alertOpen={alertOpen}
         alertClose={handleAlertClose}
         alertData={alertData}
+      />
+      <ConsumePage
+        consumeOpen={consumeOpen}
+        consumeClose={handleConsumeClose}
+        consumeProduct={props.consumeProduct}
+        row={modalRow}
+      />
+      <DisposalPage
+        disposeOpen={disposeOpen}
+        disposeClose={handleDisposeClose}
+        disposeProduct={props.disposeProduct}
+        row={modalRow}
       />
 
       <div
@@ -188,10 +225,21 @@ export default function EnhancedTable(props) {
           label="Hide Consumed Products"
           onChange={() => props.controlHideConsumed()}
         />
+        <FormControlLabel
+          style={{
+            padding: "0.5rem",
+            marginLeft: "0rem",
+            background: "#f2f2f2",
+            width: "15rem",
+          }}
+          control={<Checkbox />}
+          label="Hide Disposed Products"
+          onChange={() => props.controlHideDisposed()}
+        />
         <div
           style={{
             //border: "solid, 1px black",
-            width: "calc(100% - 15rem - 10rem)",
+            width: "calc(100% - 30rem - 10rem)",
           }}
         ></div>
         {alertData.length > 0 ? (
@@ -239,6 +287,7 @@ export default function EnhancedTable(props) {
                     <TableCell align="center">{row.expiryDate}</TableCell>
                     <TableCell align="center">{row.daysNotify}</TableCell>
                     <TableCell align="left">{row.consumedDate}</TableCell>
+                    <TableCell align="left">{row.disposedDate}</TableCell>
                     <TableCell align="left">
                       <Button
                         variant="outlined"
@@ -246,12 +295,19 @@ export default function EnhancedTable(props) {
                       >
                         View
                       </Button>
-
                       <Button
                         variant="outlined"
-                        onClick={() => props.consumeProduct(row.imageId)}
+                        onClick={() => handleConsumeOpen(row)}
+                        disabled={row.disposed}
                       >
                         {row.consumed ? <>Un-consume</> : <>Consume</>}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        disabled={row.consumed}
+                        onClick={() => handleDisposeOpen(row)}
+                      >
+                        {row.disposed ? <>Un-dispose</> : <>Dispose</>}
                       </Button>
                       <Button
                         variant="outlined"
