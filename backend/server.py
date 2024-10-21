@@ -1,9 +1,10 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
 from datetime import datetime
 import uuid
+from io import BytesIO
 import shutil
 import os
 from weather import get_temperature, get_humidity, get_current_date
@@ -239,6 +240,11 @@ def view_profile():
 def user_logout():
     """
     Route for user logout
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
     return: Logout message and status code
     """
 
@@ -258,6 +264,10 @@ def user_logout():
 def add_content():
     """
     Route to add a new photo/video
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
 
     Args:
         file(): Password of the user
@@ -328,6 +338,11 @@ def add_content():
 def get_user_records():
     """
     Route to get all images/videos posted by the user
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
     return:
     """
     if isTokenInBlacklist(guard.read_token_from_header()):
@@ -348,12 +363,21 @@ def get_user_records():
     # db.session.delete(image_query)
     # db.session.commit()
 
+@app.route('/image', methods=['GET'])
+def get_image():
+    image = images.query.filter_by(pid="3173d035-744c-41be-882a-be34d4bcebc3").first()
+    return image.data
 
 @app.route('/history', methods=['POST'])
 @auth_required
 def add_feedback():
     """
     Route to add feedback expiry date
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
     return:
     """
     if isTokenInBlacklist(guard.read_token_from_header()):
