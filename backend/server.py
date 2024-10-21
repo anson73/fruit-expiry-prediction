@@ -1,25 +1,25 @@
 from flask import Flask, jsonify, request
-from user import create_user, authenticate_user, edit_profile, set_current_user
-from content import process_content
-from sqlalchemy import text, desc
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text, desc
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
+from datetime import datetime, timedelta
 from datetime import datetime, timedelta
 import uuid
 import shutil
 import os
 from weather import get_temperature, get_humidity, get_current_date
 
-contentdb = "backend/content/" # Folder stores all the image/video files
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
 # Add databse
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# add secret key
+# add secret key TODO CHANGE THE KEY
 app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
-app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 24}
+app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 5}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
 app.config['DEFAULT_ROLES_DISABLED'] = True
@@ -35,7 +35,6 @@ class users(db.Model):
     username = db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
-    alert_day = db.Column(db.Integer)
     pfp_id = db.Column(db.Integer)
     remarks = db.Column(db.String(200))
 
@@ -51,7 +50,7 @@ class users(db.Model):
     def identity(self):
         return self.id
     
-    @property # the library needs rolenames even when disabled in the config
+    @property # Praetorian library requires roles for tokens even when roles are disabled in config
     def rolenames(self):
         return []
 
@@ -68,15 +67,24 @@ class images(db.Model):
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
-    path = db.Column(db.String(100))
+    consumed = db.Column(db.Boolean, default=False)
     notification_days = db.Column(db.Integer, default=0)
     disposed = db.Column(db.Boolean, default=False)
     dispose_date = db.Column(db.DateTime, default=None)
+    data = db.Column(db.LargeBinary)
 
     def __repr__(self):
         return '<PID %r>' % self.pid
 
-# create the database if it does not exist
+class token_blacklist(db.Model):
+    token = db.Column(db.String(400), primary_key = True)
+    expiry_date = db.Column(db.DateTime, nullable = False)
+
+    def __repr__(self):
+        return '<Token %r>' % self.token
+
+    
+# Create the database if it does not exist
 app.app_context().push()
 db.init_app(app)
 with app.app_context():
@@ -86,12 +94,29 @@ guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
 
+# Checks if the token has been logged out
+def isTokenInBlacklist(token):
+    dbToken = token_blacklist.query.get(token)
+    if dbToken is None:
+        return False
+    return True
+# Checks if the file is in correct format
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
 def user_register():
     """
-    Route to create a new user
-    return: Success/Error message, Success/Error code
+    Route to create and login new user
+    Args:
+        email(string): Email of the user
+        name(string): Username of the user
+        password(string): Password of the user
+        passwordconfirmation(string): Repeat of user's password for confirmation
+
+    return: JWT token for authentication
     """
     user_data = request.json
     user_email = user_data.get("email")
@@ -119,181 +144,197 @@ def user_register():
 
 
 
-    user = users(id=user_id, username=user_name, email=user_email, password=user_password, alert_day=None, pfp_id=None, remarks=None)
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, pfp_id=None, remarks=None)
     db.session.add(user)
     db.session.commit()
-    return "Account Sucessfully Created", 201
+    ret = {'access_token': guard.encode_jwt_token(user)}
+    return jsonify(ret), 201
 
 
 @app.route('/login', methods=['POST'])
 def user_login():
     """
     Route for user login
-    return:
+    Args:
+        email(string): Email of the user
+        password(string): password of the user
+
+    return: JWT token for authentication
     """
+    
+    # Retrieving request data
     user_data = request.json
     user_email = user_data.get("email")
     user_password = user_data.get("password")
 
+    # Query database for matching email and password pair
     user = users.query.filter_by(email=user_email,password=user_password).first()
+
+    # If user is found return JWT authentication token to frontend
     if user is not None:
         ret = {'access_token': guard.encode_jwt_token(user)}
         return jsonify(ret), 200
+    
     return "Email or Password Incorrect", 401
 
 
-# TODO add profile picture addtion # Assuming email is auto filled and can be changed
-# TODO should return remarks and pfp as well
+# Under the assumption that email can not be changed
 @app.route('/profile', methods=['GET', 'POST'])
 @auth_required
 def view_profile():
     """
-    Route for editing user profile
-    return:
+    Route for getting and editing the user profile
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN> 
+
+     POST Args:
+        password(string): Password of the user
+        newpassword(string): New password of the user
+        newpasswordconfirmation(string): Repeat of user's new password for confirmation
+        remarks(string): Remarks on the users profile
+
+    return: 
+        GET: Returns current user email remarks and profile picture TODO yet to implement profile picture
+        POST: Returns new password and remarks (FOR TESTING) TODO change to success message
     """
+
+    # Checks if the user's token is blacklisted via logout
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+    
+    
     id = current_user_id()
+
+
     if request.method == 'GET':
+        # Queries and returns profile data that should be autofilled
         user = users.query.get_or_404(id)
-        return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
+        return {"email":user.email, "remarks":user.remarks}, 200
     else:
+        # Retrieving request data
         profile_input = request.json
         user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
-        alert_day = profile_input.get("day")
         remarks = profile_input.get("remarks")
 
         user = users.query.get_or_404(id)
 
+        # Checks if password given matches password in DB
         if user.password != user_password:
             return "Passwords do not match", 401
 
+        # Checks if new passwords are not empty and match before changing the users password in DB
         if new_password is not None and new_password_confirmation is not None:
             if new_password != new_password_confirmation:
                 return "new password does not match", 400
             user.password = new_password
+
+        # If the remarks are not the same as the DB then edit
         if user.remarks != remarks:
             user.remarks = remarks
-        user.alert_day = alert_day
         db.session.commit()
 
-        return {"new_password": user.password, "new_remark": user.remarks, "alert_day": user.alert_day},200
+        return {"new_password": user.password, "new_remark": user.remarks},200
 
 
 @app.route('/logout', methods=['GET','POST'])
-
+@auth_required
 def user_logout():
     """
     Route for user logout
-    return:
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    return: Logout message and status code
     """
-    return "you have been logged out", 200
+
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is already logged out", 401
+    # Stores the token and its expiry date in the DB to prevent use unauthorized use of old tokens
+    BlackToken = token_blacklist(token=guard.read_token_from_header(),expiry_date=datetime.fromtimestamp(guard.extract_jwt_token(guard.read_token_from_header())['exp']))
+    db.session.add(BlackToken)
+    db.session.commit()
+
+    return "You have been logged out", 200
 
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
-@app.route('/prediction', methods=['POST'])
+@app.route('/prediction', methods=['POST']) #TODO add refrigerated conditions
+@auth_required
 def add_content():
-    # Test: Add entry to image database. 
-    
-    image = images(pid=0, id=0, prediction=5, feedback=3,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=False, consume_date = None, fruit="Apple", 
-                   temperature="24", humidity="40", path="backend/content", notification_days = 1, disposed=True, dispose_date = datetime.now())
-    db.session.add(image)
-    db.session.commit()
-
-    image = images(pid=1, id=0, prediction=3, feedback=4,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=False, consume_date = None, fruit="Orange", 
-                   temperature="40", humidity="10", path="backend/content", notification_days = 3, disposed=True, dispose_date = datetime.now())
-    db.session.add(image)
-    db.session.commit()
-
-    image = images(pid=2, id=0, prediction=6, feedback=9,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=True, consume_date = datetime.now(), fruit="Grape", 
-                   temperature="15", humidity="33", path="backend/content", notification_days = 8, disposed=False, dispose_date = None)
-    db.session.add(image)
-    db.session.commit()
-
-    # This test has a user id of 1, so it should not show in the history page
-    image = images(pid=3, id=1, prediction=6, feedback=9,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=True, consume_date = datetime.now(), fruit="Grape", 
-                   temperature="15", humidity="33", path="backend/content", notification_days = 4, disposed=False, dispose_date = None)
-    db.session.add(image)
-    db.session.commit()
-
-    image = images(pid=4, id=0, prediction=8, feedback=22,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=True, consume_date = datetime.now(), fruit="Apple", 
-                   temperature="3", humidity="40", path="backend/content", notification_days = 2, disposed=False, dispose_date = None)
-    db.session.add(image)
-    db.session.commit()
-
-    image = images(pid=5, id=0, prediction=1, feedback=2,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=False, consume_date = None, fruit="Bananna", 
-                   temperature="6", humidity="30", path="backend/content", notification_days = 10, disposed=False, dispose_date = None)
-    db.session.add(image)
-    db.session.commit()
-
-    image = images(pid=6, id=0, prediction=6, feedback=6,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consumed=False, consume_date = None, fruit="Mango", 
-                   temperature="6", humidity="30", path="backend/content", disposed=False, dispose_date = None)
-    db.session.add(image)
-    db.session.commit()
-
     """
     Route to add a new photo/video
-    return: Prediction Date
-    """
-    """
-    content_data = request.json
-    file = content_data.get("file")
-    fruit_type = content_data.get("fruittype")
-    location = content_data.get("location")
-    refrigeration = content_data.get("refrigeration")
-    purchase_date = content_data.get("purchasedate")
 
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    Args:
+        file(file): Password of the user
+        newpassword(string): New password of the user
+        newpasswordconfirmation(string): Repeat of user's new password for confirmation
+        remarks(string): Remarks on the users profile
+
+
+    return: Status code
+    """
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401    
+    
+    # Retrieve data from request
+    file = request.files["file"]
+    fruit_type = request.form.get("fruittype")
+    location = request.form.get("location")
+    
+    # Checks if the file exists
+    if file.filename == "":
+        return "Upload a file", 400
+    
+    # Checks if image is in wrong format
+    if not allowed_file(file.filename):
+        return "Upload png or jpeg image only", 400
+    
     # Generate new image id
-    image_id = str(uuid.uuid4())
+    image_id = uuid.uuid4().int & (1<<32) -1
     # Check if the uid is already in the database
     pid_query = images.query.filter_by(pid=image_id).first()
     while pid_query is not None:
-        image_id = str(uuid.uuid4())
+        image_id = uuid.uuid4().int & (1<<32) -1
         pid_query = images.query.filter_by(pid=image_id).first()
+    
+    
+    # Get temperature and humidity from weather api from city 
+    temperature = get_temperature(location.lower())
 
-    # Save image/video to content folder
-    file_name, file_type = os.path.splitext(file)
-    content_path = contentdb + str(image_id) + file_type
-    shutil.copy(file, content_path)
+    humidity = get_humidity(location.lower())
 
-    # Send content to AI
-    temperature = None
-    if refrigeration: temperature = refrigeration
-    else: temperature = get_temperature(location)
 
-    humidity = get_humidity(location)
-    predicted_expiry = None # Add connection to AI here (update database when reply from AI and let the user refresh on front end)
+    predicted_expiry = None # Create a thread to call the AI engine while the rest of the data gets sent to db
 
     # Add image metadata to database
-    image = images(pid=image_id, prediction=predicted_expiry, feedback=None,
-                   upload_date=get_current_date(location), fruit=fruit_type,
-                   temperature=temperature, humidity=humidity, path=content_path,
-                   consumed=False, id=current_user.id)
+    image = images(pid = image_id,
+    id = current_user_id(), 
+    prediction = None,
+    feedback = None,
+    upload_date = datetime.now(),
+    purchase_date = None,
+    consume_date = None,
+    fruit = fruit_type.lower(),
+    temperature = temperature,
+    humidity =  humidity,
+    consumed = False,
+    data = file.read())
+
     db.session.add(image)
     db.session.commit()
 
-    return jsonify({"prediction":predicted_expiry})
-    
-#----------------------------------------------------------------------------
-    image = images(pid = 12,id = current_user.id, prediction = None, feedback = None,
-    upload_date = datetime.now(), purchase_date = None,
-    consume_date = None,
-    fruit = None,
-    temperature = None,
-    humidity =  None,
-    path = None,
-    consumed = None)
-    db.session.add(image)
-    db.session.commit()
-"""
-    return "created", 200
+    return f"Uploaded {file.filename}",200
+
 
 
 @app.route('/history', methods=['GET'])
@@ -305,7 +346,7 @@ def get_user_records():
     # Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
     query = request.args.to_dict(flat=False)
 
-    uid = 0 # User id hardcoded.
+    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
     if query["filter"][0] == "hide": 
         filters = images.query.filter_by(id=uid, consumed=False)
     else:
@@ -338,7 +379,10 @@ def get_user_records():
     result = []
     for image in filters.all():
         # Convert prediction(integer days) to a date
-        prediction = image.upload_date + timedelta(days=image.prediction)
+        if image.prediction is not None:
+            prediction = image.upload_date + timedelta(days=image.prediction)
+        else: 
+            prediction = None
 
         result.append({
             "imageId": image.pid,
@@ -506,7 +550,7 @@ def alert():
 
     # Example usage: /history/alert
 
-    uid = 0 # User id hardcoded.
+    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
 
     # Get all not consumed images
     non_consumed = images.query.filter_by(id=uid, consumed=False, disposed=False)
@@ -535,13 +579,27 @@ def alert():
 
     return result
 
+
+@app.route('/image', methods=['GET'])
+def get_image():
+    image = images.query.filter_by(pid=1219339313).first()
+    return image.data
+
 @app.route('/history', methods=['POST'])
+@auth_required
 def add_feedback():
     """
     Route to add feedback expiry date
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
     return:
     """
-
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+    
     return
 
 
