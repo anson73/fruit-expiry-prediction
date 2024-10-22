@@ -9,7 +9,8 @@ import uuid
 import shutil
 import os
 from weather import get_temperature, get_humidity, get_current_date
-
+import atexit
+from flask_apscheduler import APScheduler
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
@@ -23,11 +24,12 @@ app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 5}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
 app.config['DEFAULT_ROLES_DISABLED'] = True
-# Initalise the database, JWT token libray and CORS
+app.config['SCHEDULER_API_ENABLED'] = True
+# Initalise the database, JWT token libray, CORS and Scheduler
 db = SQLAlchemy()
 guard = Praetorian()
 cors = CORS()
-
+scheduler = APScheduler()
 
 # Create database model (add authentication session token)
 class users(db.Model):
@@ -92,6 +94,9 @@ with app.app_context():
 guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
+# Initalizes Background scheduler
+scheduler.init_app(app)
+scheduler.start()
 
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
@@ -103,6 +108,22 @@ def isTokenInBlacklist(token):
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# SCHEDULED FUNCTIONS ----------------------------------------------------------------------------------
+@scheduler.task('interval', id='blacklist', hours = 2)
+def ClearBlacklist():
+    with scheduler.app.app_context():
+        query = token_blacklist.query.all()
+        counter = 0
+        for token in query:
+            if token.expiry_date > datetime.now():
+                db.session.delete(token)
+                db.session.commit()
+                counter += 1
+        print(f"{counter} Tokens cleared from the blacklist")
+    
+
+
 
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
@@ -606,6 +627,6 @@ def add_feedback():
     return
 
 
-
+atexit.register(lambda: scheduler.shutdown(wait=False))
 if __name__ == '__main__':
     app.run(port=5005)
