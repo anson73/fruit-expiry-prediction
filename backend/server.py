@@ -67,7 +67,6 @@ class images(db.Model):
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
-    consumed = db.Column(db.Boolean, default=False)
     notification_days = db.Column(db.Integer, default=0)
     disposed = db.Column(db.Boolean, default=False)
     dispose_date = db.Column(db.DateTime, default=None)
