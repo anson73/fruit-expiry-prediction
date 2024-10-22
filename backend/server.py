@@ -101,8 +101,8 @@ scheduler.start()
 
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
-    dbToken = token_blacklist.query.get(token)
-    if dbToken is None:
+    dbToken = token_blacklist.query.filter_by(token=token).first
+    if not dbToken:
         return False
     return True
 # Checks if the file is in correct format
@@ -123,17 +123,18 @@ def ClearBlacklist():
                 counter += 1
         print(f"{counter} Tokens cleared from the blacklist")
 
-@scheduler.task('interval', id='Alert', hours = 6) # 6 hours
+@scheduler.task('interval', id='Alert', seconds = 6) # 6 hours
 def EmailAlert():
     with scheduler.app.app_context():
         query = images.query.all()
         for image in query:
             if image.prediction:
-                if image.upload_date + timedelta(days=image.prediction) < datetime.now():
+                if image.upload_date + timedelta(days=image.prediction) < datetime.now() + timedelta(days=image.notification_days):
                     if image.notified is False:
                         image.notified = True
                         db.session.commit()
-                        print("expired")
+                        email = users.query.filter_by(id = image.id).first().email
+                        print(f"To {email} {image.fruit} is expiring")
             
                 
     
