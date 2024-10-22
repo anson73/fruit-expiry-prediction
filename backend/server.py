@@ -38,7 +38,6 @@ class users(db.Model):
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
     pfp_id = db.Column(db.Integer)
-    remarks = db.Column(db.String(200))
 
     @classmethod
     def lookup(cls, username):
@@ -180,7 +179,7 @@ def user_register():
 
 
 
-    user = users(id=user_id, username=user_name, email=user_email, password=user_password, pfp_id=None, remarks=None)
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, pfp_id=None)
     db.session.add(user)
     db.session.commit()
     ret = {'access_token': guard.encode_jwt_token(user)}
@@ -229,11 +228,10 @@ def view_profile():
         password(string): Password of the user
         newpassword(string): New password of the user
         newpasswordconfirmation(string): Repeat of user's new password for confirmation
-        remarks(string): Remarks on the users profile
 
     return: 
-        GET: Returns current user email remarks and profile picture TODO yet to implement profile picture
-        POST: Returns new password and remarks (FOR TESTING) TODO change to success message
+        GET: Returns current user email and profile picture TODO yet to implement profile picture
+        POST: Returns new password(FOR TESTING) TODO change to success message
     """
 
     # Checks if the user's token is blacklisted via logout
@@ -247,14 +245,13 @@ def view_profile():
     if request.method == 'GET':
         # Queries and returns profile data that should be autofilled
         user = users.query.get_or_404(id)
-        return {"email":user.email, "remarks":user.remarks}, 200
+        return {"email":user.email}, 200
     else:
         # Retrieving request data
         profile_input = request.json
         user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
-        remarks = profile_input.get("remarks")
 
         user = users.query.get_or_404(id)
 
@@ -268,12 +265,10 @@ def view_profile():
                 return "new password does not match", 400
             user.password = new_password
 
-        # If the remarks are not the same as the DB then edit
-        if user.remarks != remarks:
-            user.remarks = remarks
+
         db.session.commit()
 
-        return {"new_password": user.password, "new_remark": user.remarks},200
+        return {"new_password": user.password},200
 
 
 @app.route('/logout', methods=['GET','POST'])
@@ -314,7 +309,6 @@ def add_content():
         file(file): Password of the user
         newpassword(string): New password of the user
         newpasswordconfirmation(string): Repeat of user's new password for confirmation
-        remarks(string): Remarks on the users profile
 
 
     return: Status code
