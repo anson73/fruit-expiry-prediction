@@ -73,6 +73,7 @@ class images(db.Model):
     disposed = db.Column(db.Boolean, default=False)
     dispose_date = db.Column(db.DateTime, default=None)
     data = db.Column(db.LargeBinary)
+    notified = db.Column(db.Boolean, default = False)
 
     def __repr__(self):
         return '<PID %r>' % self.pid
@@ -116,11 +117,25 @@ def ClearBlacklist():
         query = token_blacklist.query.all()
         counter = 0
         for token in query:
-            if token.expiry_date > datetime.now():
+            if token.expiry_date < datetime.now():
                 db.session.delete(token)
                 db.session.commit()
                 counter += 1
         print(f"{counter} Tokens cleared from the blacklist")
+
+@scheduler.task('interval', id='Alert', hours = 6) # 6 hours
+def EmailAlert():
+    with scheduler.app.app_context():
+        query = images.query.all()
+        for image in query:
+            if image.prediction:
+                if image.upload_date + timedelta(days=image.prediction) < datetime.now():
+                    if image.notified is False:
+                        image.notified = True
+                        db.session.commit()
+                        print("expired")
+            
+                
     
 
 
@@ -403,7 +418,7 @@ def get_user_records():
     result = []
     for image in filters.all():
         # Convert prediction(integer days) to a date
-        if image.prediction is not None:
+        if image.prediction:
             prediction = image.upload_date + timedelta(days=image.prediction)
         else: 
             prediction = None
