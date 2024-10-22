@@ -13,6 +13,7 @@ import atexit
 from flask_apscheduler import APScheduler
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+DEFAULT_PICTURE_PATH = 'Asset/Default.png'
 
 app = Flask(__name__)
 # Add databse
@@ -37,7 +38,7 @@ class users(db.Model):
     username = db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
-    pfp_id = db.Column(db.Integer)
+    profile_picture = db.Column(db.LargeBinary, default = None)
 
     @classmethod
     def lookup(cls, username):
@@ -100,10 +101,11 @@ scheduler.start()
 
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
-    dbToken = token_blacklist.query.filter_by(token=token).first
-    if not dbToken:
+    dbToken = token_blacklist.query.filter_by(token=token).one_or_none()
+    if dbToken is None:
         return False
     return True
+
 # Checks if the file is in correct format
 def allowed_file(filename):
     return '.' in filename and \
@@ -122,7 +124,7 @@ def ClearBlacklist():
                 counter += 1
         print(f"{counter} Tokens cleared from the blacklist")
 
-@scheduler.task('interval', id='Alert', seconds = 6) # 6 hours
+@scheduler.task('interval', id='Alert', hours = 6) # 6 hours
 def EmailAlert():
     with scheduler.app.app_context():
         query = images.query.all()
@@ -177,9 +179,10 @@ def user_register():
         user_id = str(uuid.uuid4())
         id_query = users.query.filter_by(id=user_id).first()
 
+    with open(DEFAULT_PICTURE_PATH, 'rb' ) as file:
+        blobdata = file.read()
 
-
-    user = users(id=user_id, username=user_name, email=user_email, password=user_password, pfp_id=None)
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, profile_picture=blobdata)
     db.session.add(user)
     db.session.commit()
     ret = {'access_token': guard.encode_jwt_token(user)}
@@ -230,7 +233,7 @@ def view_profile():
         newpasswordconfirmation(string): Repeat of user's new password for confirmation
 
     return: 
-        GET: Returns current user email and profile picture TODO yet to implement profile picture
+        GET: Returns current user email
         POST: Returns new password(FOR TESTING) TODO change to success message
     """
 
@@ -295,6 +298,60 @@ def user_logout():
 
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
+@app.route('/profile/picture/view', methods=['GET']) 
+@auth_required
+def get_picture():
+
+    """
+    Route to view profile picture
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    return: image
+    """
+
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+    
+    id = current_user_id()
+
+    # Queries and returns profile data that should be autofilled
+    user = users.query.get_or_404(id)
+    return user.profile_picture
+
+
+@app.route('/profile/picture', methods=['POST']) 
+@auth_required
+def add_picture():
+    """
+    Route to add a new profile picture
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    Args:
+        file(file): Password of the user
+
+
+    return: image
+    """
+    # Checks if the user's token is blacklisted via logout
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+    
+    
+    id = current_user_id()
+
+    file = request.files["file"]
+    user = users.query.filter_by(id=id)
+    user.profile_picture = file.read()
+    db.session.commit()
+
+    return user.profile_picture
+
 @app.route('/prediction', methods=['POST']) #TODO add refrigerated conditions
 @auth_required
 def add_content():
