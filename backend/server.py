@@ -234,7 +234,7 @@ def view_profile():
 
     return: 
         GET: Returns current user email
-        POST: Returns new password(FOR TESTING) TODO change to success message
+        POST: Returns new password(FOR TESTING)
     """
 
     # Checks if the user's token is blacklisted via logout
@@ -271,7 +271,7 @@ def view_profile():
 
         db.session.commit()
 
-        return {"new_password": user.password},200
+        return "Password changed",200
 
 
 @app.route('/logout', methods=['GET','POST'])
@@ -352,7 +352,7 @@ def add_picture():
 
     return user.profile_picture
 
-@app.route('/prediction', methods=['POST']) #TODO add refrigerated conditions
+@app.route('/prediction', methods=['POST'])
 @auth_required
 def add_content():
     """
@@ -377,6 +377,7 @@ def add_content():
     file = request.files["file"]
     fruit_type = request.form.get("fruittype")
     location = request.form.get("location")
+    refrigerated = bool(request.form.get("refrigerated"))
     
     # Checks if the file exists
     if file.filename == "":
@@ -396,9 +397,12 @@ def add_content():
     
     
     # Get temperature and humidity from weather api from city 
-    temperature = get_temperature(location.lower())
-
-    humidity = get_humidity(location.lower())
+    if refrigerated:
+        temperature = 3
+        humidity = 40
+    else:
+        temperature = get_temperature(location.lower())
+        humidity = get_humidity(location.lower())
 
 
     predicted_expiry = None # Create a thread to call the AI engine while the rest of the data gets sent to db
