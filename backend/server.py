@@ -28,7 +28,6 @@ db = SQLAlchemy()
 guard = Praetorian()
 cors = CORS()
 
-
 # Create database model (add authentication session token)
 class users(db.Model):
     id = db.Column(db.String(100), primary_key = True)
@@ -81,7 +80,7 @@ class token_blacklist(db.Model):
         return '<Token %r>' % self.token
 
     
-    
+
 
 # create the database if it does not exist
 app.app_context().push()
@@ -135,6 +134,11 @@ def user_register():
     user = users(id=user_id, username=user_name, email=user_email, password=user_password, alert_day=None, pfp_id=None, remarks=None)
     db.session.add(user)
     db.session.commit()
+    
+    # Test
+    all_users = users.query.all()
+    for user in all_users:
+        print(f"User ID: {user.id}, Username: {user.username}, Email: {user.email}")
     ret = {'access_token': guard.encode_jwt_token(user)}
     return jsonify(ret), 201
 
@@ -150,6 +154,10 @@ def user_login():
     user_password = user_data.get("password")
 
     user = users.query.filter_by(email=user_email,password=user_password).first()
+    # all_users = users.query.all()
+    # for user in all_users:
+    #     print(f"User ID: {user.id}, Username: {user.username}, Email: {user.email}")
+    print(user)
     if user is not None:
         ret = {'access_token': guard.encode_jwt_token(user)}
         return jsonify(ret), 200
@@ -174,7 +182,7 @@ def view_profile():
         return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
     else:
         profile_input = request.json
-        user_password = profile_input.get("password")
+        # user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
         alert_day = profile_input.get("day")
@@ -182,8 +190,8 @@ def view_profile():
 
         user = users.query.get_or_404(id)
 
-        if user.password != user_password:
-            return "Passwords do not match", 401
+        # if user.password != user_password:
+        #     return "Passwords do not match", 401
 
         if new_password is not None and new_password_confirmation is not None:
             if new_password != new_password_confirmation:
@@ -197,18 +205,18 @@ def view_profile():
         return {"new_password": user.password, "new_remark": user.remarks, "alert_day": user.alert_day},200
 
 
-@app.route('/logout', methods=['GET','POST'])
+@app.route('/logout', methods=['POST'])
 
 def user_logout():
     """
     Route for user logout
     return:
     """
-    BlackToken = token_blacklist(token=guard.read_token_from_header(),expiry_date=datetime.fromtimestamp(guard.extract_jwt_token(guard.read_token_from_header())['exp']))
-    db.session.add(BlackToken)
-    db.session.commit()
-
-    return "You have been logged out", 200
+    # BlackToken = token_blacklist(token=guard.read_token_from_header(),expiry_date=datetime.fromtimestamp(guard.extract_jwt_token(guard.read_token_from_header())['exp']))
+    # db.session.add(BlackToken)
+    # db.session.commit()
+    return jsonify({"message": "You have been logged out"}), 200
+    # return "You have been logged out", 200
 
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
