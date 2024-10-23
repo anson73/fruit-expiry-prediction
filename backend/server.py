@@ -30,7 +30,6 @@ app.config['SCHEDULER_API_ENABLED'] = True
 db = SQLAlchemy()
 guard = Praetorian()
 cors = CORS()
-scheduler = APScheduler()
 
 # Create database model (add authentication session token)
 class users(db.Model):
@@ -86,7 +85,9 @@ class token_blacklist(db.Model):
         return '<Token %r>' % self.token
 
     
-# Create the database if it does not exist
+
+
+# create the database if it does not exist
 app.app_context().push()
 db.init_app(app)
 with app.app_context():
@@ -95,9 +96,6 @@ with app.app_context():
 guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
-# Initalizes Background scheduler
-scheduler.init_app(app)
-scheduler.start()
 
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
@@ -185,6 +183,11 @@ def user_register():
     user = users(id=user_id, username=user_name, email=user_email, password=user_password, profile_picture=blobdata)
     db.session.add(user)
     db.session.commit()
+    
+    # Test
+    all_users = users.query.all()
+    for user in all_users:
+        print(f"User ID: {user.id}, Username: {user.username}, Email: {user.email}")
     ret = {'access_token': guard.encode_jwt_token(user)}
     return jsonify(ret), 201
 
@@ -207,8 +210,10 @@ def user_login():
 
     # Query database for matching email and password pair
     user = users.query.filter_by(email=user_email,password=user_password).first()
-
-    # If user is found return JWT authentication token to frontend
+    # all_users = users.query.all()
+    # for user in all_users:
+    #     print(f"User ID: {user.id}, Username: {user.username}, Email: {user.email}")
+    print(user)
     if user is not None:
         ret = {'access_token': guard.encode_jwt_token(user)}
         return jsonify(ret), 200
@@ -252,7 +257,7 @@ def view_profile():
     else:
         # Retrieving request data
         profile_input = request.json
-        user_password = profile_input.get("password")
+        # user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
 
@@ -274,8 +279,8 @@ def view_profile():
         return "Password changed",200
 
 
-@app.route('/logout', methods=['GET','POST'])
-@auth_required
+@app.route('/logout', methods=['POST'])
+
 def user_logout():
     """
     Route for user logout
