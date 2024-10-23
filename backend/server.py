@@ -259,7 +259,7 @@ def view_profile():
     else:
         # Retrieving request data
         profile_input = request.json
-        # user_password = profile_input.get("password")
+        user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
         notification_days = profile_input.get("defaultdays")
