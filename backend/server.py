@@ -39,6 +39,7 @@ class users(db.Model):
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
     profile_picture = db.Column(db.LargeBinary, default = None)
+    default_days = db.Column(db.Integer) # default value for notifications
 
     @classmethod
     def lookup(cls, username):
@@ -182,7 +183,7 @@ def user_register():
     with open(DEFAULT_PICTURE_PATH, 'rb' ) as file:
         blobdata = file.read()
 
-    user = users(id=user_id, username=user_name, email=user_email, password=user_password, profile_picture=blobdata)
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, profile_picture=blobdata, default_days = 3)
     db.session.add(user)
     db.session.commit()
     ret = {'access_token': guard.encode_jwt_token(user)}
@@ -248,14 +249,16 @@ def view_profile():
     if request.method == 'GET':
         # Queries and returns profile data that should be autofilled
         user = users.query.get_or_404(id)
-        return {"email":user.email}, 200
+        return {"email":user.email, "default_days": user.default_days}, 200
     else:
         # Retrieving request data
         profile_input = request.json
         user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
+        notification_days = profile_input.get("defaultdays")
 
+        return_string = ""
         user = users.query.get_or_404(id)
 
         # Checks if password given matches password in DB
@@ -267,11 +270,20 @@ def view_profile():
             if new_password != new_password_confirmation:
                 return "new password does not match", 400
             user.password = new_password
+            return_string = "Password changed"
 
+        if user.default_days != notification_days:
+            user.default_days = notification_days
+            if return_string == "":
+                return_string = "Default notification day changed"
+            else:
+                return_string += " and default notification day changed"
 
         db.session.commit()
+        if return_string == "":
+            return_string = "Nothing new"
 
-        return "Password changed",200
+        return return_string,200
 
 
 @app.route('/logout', methods=['GET','POST'])
@@ -346,7 +358,8 @@ def add_picture():
     id = current_user_id()
 
     file = request.files["file"]
-    user = users.query.filter_by(id=id)
+    user = users.query.filter_by(id=id).first()
+    user.profile_picture = None
     user.profile_picture = file.read()
     db.session.commit()
 
@@ -404,6 +417,9 @@ def add_content():
         temperature = get_temperature(location.lower())
         humidity = get_humidity(location.lower())
 
+    user = users.query.filter_by(id= current_user_id()).first()
+
+
 
     predicted_expiry = None # Create a thread to call the AI engine while the rest of the data gets sent to db
 
@@ -418,6 +434,7 @@ def add_content():
     fruit = fruit_type.lower(),
     temperature = temperature,
     humidity =  humidity,
+    notification_days = user.default_days,
     consumed = False,
     data = file.read())
 
@@ -677,7 +694,8 @@ def alert():
 
 @app.route('/image', methods=['GET'])
 def get_image():
-    image = images.query.filter_by(pid=1219339313).first()
+    image_id = int(request.args.get('imageid'))
+    image = images.query.filter_by(pid=image_id).first()
     return image.data
 
 @app.route('/history', methods=['POST'])
