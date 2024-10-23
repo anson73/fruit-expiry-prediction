@@ -1,69 +1,72 @@
-import React from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import React from 'react'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 
-import Box from "@mui/material/Box";
-import BottomNavigation from "@mui/material/BottomNavigation";
-import BottomNavigationAction from "@mui/material/BottomNavigationAction";
-import RestoreIcon from "@mui/icons-material/Restore";
+import Box from '@mui/material/Box'
+import BottomNavigation from '@mui/material/BottomNavigation'
+import BottomNavigationAction from '@mui/material/BottomNavigationAction'
+import RestoreIcon from '@mui/icons-material/Restore'
 
-import Footer from "./components/Footer";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import History from "./components/History";
-import Prediction from "./components/Prediction";
-import Profile from "./components/Profile";
-import Landpage from "./components/Landpage";
+import Footer from './components/Footer'
+import Login from './components/Login'
+import Register from './components/Register'
+import History from './components/History'
+import Prediction from './components/Prediction'
+import Profile from './components/Profile'
+import Landpage from './components/Landpage'
 
 const PageList = () => {
-  const [token, setToken] = React.useState(null);
-  const [email, setEmail] = React.useState("");
-  const navigate = useNavigate();
+  const [token, setToken] = React.useState(null)
+  const [email, setEmail] = React.useState('')
+  const navigate = useNavigate()
 
   React.useEffect(() => {
-    const checktoken = localStorage.getItem("token");
+    const checktoken = localStorage.getItem('token')
     if (checktoken) {
-      setToken(checktoken);
-      setEmail(localStorage.getItem("email"));
+      setToken(checktoken)
+      setEmail(localStorage.getItem('email'))
     }
-  }, []);
+  }, [])
 
   const logout = async () => {
-    //const response = await fetch("http://localhost:5005/user/auth/logout", {
-    //  method: "POST",
-    //  body: JSON.stringify({}),
-    //  headers: {
-    //    "Content-type": "application/json",
-    //    Authorization: `Bearer ${token}`,
-    //  },
-    //});
-    //const data = await response.json();
-    //if (data.error) {
-    //  alert(data.error);
-    //} else {
-    //  setToken(null);
-    //  localStorage.removeItem("token");
-    //  localStorage.removeItem("email");
-    //  navigate("/listings");
-    //  // console.log('logged out');
-    //}
-    setToken(null);
-    localStorage.removeItem("token");
-    navigate("/landpage");
-  };
+    try {
+      const response = await fetch('http://localhost:5005/logout', {
+        method: 'POST',
+        body: JSON.stringify({}),
+        headers: {
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log(response)
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      const data = await response.json()
+      if (data.error) {
+        alert(data.error)
+      } else {
+        setToken(null)
+        localStorage.removeItem('token')
+        localStorage.removeItem('email')
+        navigate('/Landpage')
+      }
+    } catch (error) {
+      console.error('There was a problem with the fetch operation:', error)
+    }
+  }
 
   const pages = token
-    ? ["Prediction", "History", "Profile", "Logout"]
-    : ["Register", "Login"];
+    ? ['Prediction', 'History', 'Profile', 'Logout']
+    : ['Register', 'Login']
 
   return (
     <>
       <Box
         style={{
-          height: "calc(100vh - 118px)",
+          height: 'calc(100vh - 118px)',
           //border: "1px solid red",
-          overflow: "auto",
-        }}
-      >
+          overflow: 'auto',
+        }}>
         <Routes>
           <Route path="/" element={<Landpage />} />
           <Route path="/history" element={<History />} />
@@ -82,23 +85,20 @@ const PageList = () => {
       </Box>
       <Box
         style={{
-          height: "110px",
-          // border: '1px solid red',
-        }}
-      >
+          height: '110px',
+        }}>
         <hr />
         <Box>
           <BottomNavigation
             showLabels
-            value={""}
+            value={''}
             onChange={(event, newValue) => {
-              if (pages[newValue] === "Logout") {
-                logout();
+              if (pages[newValue] === 'Logout') {
+                logout()
               } else {
-                navigate(`/${pages[newValue].toLowerCase()}`);
+                navigate(`/${pages[newValue].toLowerCase()}`)
               }
-            }}
-          >
+            }}>
             {pages.map((page, idx) => {
               return (
                 <BottomNavigationAction
@@ -107,7 +107,7 @@ const PageList = () => {
                   icon={<RestoreIcon />}
                   key={idx}
                 />
-              );
+              )
             })}
           </BottomNavigation>
         </Box>
@@ -115,10 +115,10 @@ const PageList = () => {
         <Footer />
       </Box>
     </>
-  );
-};
+  )
+}
 
-export default PageList;
+export default PageList
 
 /*
  âœ… useState -- easy
