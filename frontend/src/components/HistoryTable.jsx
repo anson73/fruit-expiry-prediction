@@ -1,6 +1,5 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -10,263 +9,78 @@ import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
 import Button from "@mui/material/Button";
 
-function createData(
-  seq,
-  imageId,
-  fruitType,
-  uploadTime,
-  humidity,
-  temperature,
-  purchaseDate,
-  expiryDate,
-  consumed,
-  consumeDate
-) {
-  return {
-    seq,
-    imageId,
-    fruitType,
-    uploadTime,
-    humidity,
-    temperature,
-    purchaseDate,
-    expiryDate,
-    consumed,
-    consumeDate,
-  };
-}
-
-const defaultRows = [
-  createData(
-    1,
-    0,
-    "Apple",
-    "2024-09-20",
-    67,
-    27,
-    "2024-09-20",
-    "2024-09-30",
-    false,
-    ""
-  ),
-  createData(
-    2,
-    1,
-    "Banana",
-    "2024-09-20",
-    51,
-    34,
-    "2024-09-20",
-    "2024-09-30",
-    true,
-    "2024-09-25"
-  ),
-  createData(
-    3,
-    2,
-    "Tomato",
-    "2024-09-20",
-    24,
-    22,
-    "2024-09-20",
-    "2024-09-30",
-    false,
-    ""
-  ),
-  createData(
-    4,
-    3,
-    "Apple",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    5,
-    4,
-    "Banana",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    6,
-    5,
-    "Pear",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    7,
-    6,
-    "Mango",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-  createData(
-    8,
-    7,
-    "Grapefruit",
-    "2024-10-20",
-    24,
-    22,
-    "2024-10-20",
-    "2024-10-30",
-    false,
-    ""
-  ),
-];
-
-function getDateNow() {
-  const today = new Date();
-  const month = today.getMonth() + 1;
-  const year = today.getFullYear();
-  const date = today.getDate();
-  return `${year}-${month}-${date}`;
-}
-
-function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
-function getComparator(order, orderBy) {
-  return order === "desc"
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
-
-const headCells = [
-  {
-    id: "seq",
-    numeric: true,
-    disablePadding: true,
-    label: "No.",
-  },
-  {
-    id: "imageId",
-    numeric: true,
-    disablePadding: false,
-    label: "Image ID",
-  },
-  {
-    id: "fruitType",
-    numeric: false,
-    disablePadding: false,
-    label: "Fruit Type",
-  },
-  {
-    id: "uploadTime",
-    numeric: false,
-    disablePadding: false,
-    label: "Upload Time",
-  },
-  {
-    id: "humidity",
-    numeric: true,
-    disablePadding: false,
-    label: "Humidity",
-  },
-  {
-    id: "temperature",
-    numeric: true,
-    disablePadding: false,
-    label: "Temperature",
-  },
-  {
-    id: "purchaseDate",
-    numeric: true,
-    disablePadding: false,
-    label: "Purchase Date",
-  },
-  {
-    id: "expiryDate",
-    numeric: true,
-    disablePadding: false,
-    label: "Expiry Date",
-  },
-  {
-    id: "ConsumeDate",
-    numeric: true,
-    disablePadding: false,
-    label: "ConsumeDate",
-  },
-  {
-    id: "action",
-    numeric: false,
-    disablePadding: false,
-    label: "Action",
-  },
-];
+import NotifDates from "./NotifDates";
+import AlertTable from "./AlertTable";
+import ConsumePage from "./ConsumePage";
+import DisposalPage from "./DisposalPage";
 
 function EnhancedTableHead(props) {
-  const {
-    onSelectAllClick,
-    order,
-    orderBy,
-    numSelected,
-    rowCount,
-    onRequestSort,
-  } = props;
+  const { order, orderBy, onRequestSort } = props;
   const createSortHandler = (property) => (event) => {
     onRequestSort(event, property);
   };
 
+  const headCells = [
+    {
+      id: "imageId",
+      label: "Image ID",
+    },
+    {
+      id: "fruitType",
+      label: "Fruit Type",
+    },
+    {
+      id: "uploadTime",
+      label: "Upload Time",
+    },
+    {
+      id: "humidity",
+      label: "Humidity",
+    },
+    {
+      id: "temperature",
+      label: "Temperature",
+    },
+    {
+      id: "purchaseDate",
+      label: "Purchase Date",
+    },
+    {
+      id: "expiryDate",
+      label: "Expiry Date",
+    },
+    {
+      id: "daysNotify",
+      label: "Notification (Days)",
+    },
+    {
+      id: "consumeDate",
+      label: "Consumed Date",
+    },
+    {
+      id: "disposeDate",
+      label: "Disposed Date",
+    },
+  ];
+
   return (
     <TableHead>
       <TableRow>
-        <TableCell padding="checkbox">
-          <Checkbox
-            color="primary"
-            indeterminate={numSelected > 0 && numSelected < rowCount}
-            checked={rowCount > 0 && numSelected === rowCount}
-            onChange={onSelectAllClick}
-            inputProps={{
-              "aria-label": "select all desserts",
-            }}
-          />
+        <TableCell align="center" padding="normal">
+          No.
         </TableCell>
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
-            align={headCell.numeric ? "center" : "left"}
-            padding={headCell.disablePadding ? "none" : "normal"}
+            align="center"
+            padding="normal"
             sortDirection={orderBy === headCell.id ? order : false}
           >
             <TableSortLabel
@@ -283,121 +97,51 @@ function EnhancedTableHead(props) {
             </TableSortLabel>
           </TableCell>
         ))}
+        <TableCell align="center" padding="normal">
+          Action
+        </TableCell>
       </TableRow>
     </TableHead>
   );
 }
 
 EnhancedTableHead.propTypes = {
-  numSelected: PropTypes.number.isRequired,
   onRequestSort: PropTypes.func.isRequired,
-  onSelectAllClick: PropTypes.func.isRequired,
   order: PropTypes.oneOf(["asc", "desc"]).isRequired,
   orderBy: PropTypes.string.isRequired,
   rowCount: PropTypes.number.isRequired,
 };
 
-function EnhancedTableToolbar(props) {
-  const { numSelected } = props;
-  return (
-    <Toolbar
-      sx={[
-        {
-          pl: { sm: 2 },
-          pr: { xs: 1, sm: 1 },
-        },
-        numSelected > 0 && {
-          bgcolor: (theme) =>
-            alpha(
-              theme.palette.primary.main,
-              theme.palette.action.activatedOpacity
-            ),
-        },
-      ]}
-    >
-      {numSelected > 0 ? (
-        <Typography
-          sx={{ flex: "1 1 100%" }}
-          color="inherit"
-          variant="subtitle1"
-          component="div"
-        >
-          {numSelected} selected
-        </Typography>
-      ) : null}
-      {numSelected > 0 ? (
-        <Tooltip title="Delete">
-          <IconButton>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      ) : (
-        <Tooltip title="Filter list">
-          <IconButton>
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Toolbar>
-  );
-}
-
-EnhancedTableToolbar.propTypes = {
-  numSelected: PropTypes.number.isRequired,
-};
-
-export default function EnhancedTable() {
-  const [order, setOrder] = React.useState("asc");
-  const [orderBy, setOrderBy] = React.useState("calories");
-  const [selected, setSelected] = React.useState([]);
-  const [page, setPage] = React.useState(0);
+export default function EnhancedTable(props) {
   const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [rows, setRows] = React.useState(defaultRows);
-  const [originalRows, setOriginalRows] = React.useState(defaultRows);
-  const [hideConsumed, setHideConsumed] = React.useState(false);
+  const [rows, setRows] = React.useState([]);
+  const [alertData, setAlertData] = React.useState([]);
+
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [modalRow, setModalRow] = React.useState({});
+  const [alertOpen, setAlertOpen] = React.useState(false);
+  const [consumeOpen, setConsumeOpen] = React.useState(false);
+  const [disposeOpen, setDisposeOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setRows(props.historyData);
+    setAlertData(props.alertContent);
+  }, [props.historyData]);
+  //console.log(rows);
 
   const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
-
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      const newSelected = rows.map((n) => n.seq);
-      setSelected(newSelected);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleClick = (event, id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
-    }
-    setSelected(newSelected);
+    const isAsc = props.orderBy === property && props.order === "asc";
+    props.setOrder(isAsc ? "desc" : "asc");
+    props.setOrderBy(property);
   };
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage);
+    props.setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    props.setRowsPerPage(parseInt(event.target.value, 10));
+    props.setPage(0);
   };
 
   const handleChangeDense = (event) => {
@@ -406,73 +150,115 @@ export default function EnhancedTable() {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
-
-  const visibleRows = React.useMemo(
-    () =>
-      [...rows]
-        .sort(getComparator(order, orderBy))
-        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage, rows]
-  );
+    props.page > 0
+      ? Math.max(0, (1 + props.page) * props.rowsPerPage - rows.length)
+      : 0;
 
   const viewDetails = () => {};
 
-  const consumeProduct = (event, seq) => {
-    let modifiedRows = [];
-    rows.forEach((row) => {
-      //console.log(row.seq, seq, row.consumed);
-      if (row.seq === seq && row.consumed === true) {
-        row.consumed = false;
-        row.consumeDate = "";
-        modifiedRows.push(row);
-        //console.log("unconsume the product");
-      } else if (row.seq === seq && row.consumed === false) {
-        row.consumed = true;
-        row.consumeDate = getDateNow();
-        //console.log("consume the product");
-      } else {
-        modifiedRows.push(row);
-      }
-    });
-    if (!hideConsumed) {
-      setRows(rows.filter((row) => row.consumed === false));
-      setHideConsumed(true);
-    }
-    setRows(modifiedRows);
+  const handleModalOpen = (row) => {
+    setModalRow(row);
+    setModalOpen(true);
   };
-
-  const deleteProduct = (event, seq) => {
-    setRows(rows.filter((row) => row.seq !== seq));
-    setOriginalRows(originalRows.filter((row) => row.seq !== seq));
-  };
-
-  const handleHideConsumed = () => {
-    setOriginalRows(rows);
-    if (!hideConsumed) {
-      setRows(rows.filter((row) => row.consumed === false));
-      setHideConsumed(true);
+  const handleModalClose = () => setModalOpen(false);
+  const handleAlertOpen = () => setAlertOpen(true);
+  const handleAlertClose = () => setAlertOpen(false);
+  const handleConsumeOpen = (row) => {
+    if (!row.consumed) {
+      setModalRow(row);
+      setConsumeOpen(true);
     } else {
-      setRows(originalRows);
-      setHideConsumed(false);
+      props.unconsumeProduct(row.imageId);
     }
   };
+  const handleConsumeClose = () => setConsumeOpen(false);
+  const handleDisposeOpen = (row) => {
+    if (!row.disposed) {
+      setModalRow(row);
+      setDisposeOpen(true);
+    } else {
+      props.undisposeProduct(row.imageId);
+    }
+  };
+  const handleDisposeClose = () => setDisposeOpen(false);
 
   return (
-    <Box sx={{ width: "80%" }}>
-      <Paper sx={{ width: "100%", mb: 2, justifyContent: "center" }}>
+    <Box sx={{ width: "90%" }}>
+      <NotifDates
+        modalOpen={modalOpen}
+        modalClose={handleModalClose}
+        row={modalRow}
+        changeNotifDate={props.changeNotifDate}
+      />
+      <AlertTable
+        alertOpen={alertOpen}
+        alertClose={handleAlertClose}
+        alertData={alertData}
+      />
+      <ConsumePage
+        consumeOpen={consumeOpen}
+        consumeClose={handleConsumeClose}
+        consumeProduct={props.consumeProduct}
+        row={modalRow}
+      />
+      <DisposalPage
+        disposeOpen={disposeOpen}
+        disposeClose={handleDisposeClose}
+        disposeProduct={props.disposeProduct}
+        row={modalRow}
+      />
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+        }}
+      >
         <FormControlLabel
           style={{
-            padding: "1rem",
+            padding: "0.5rem",
             marginLeft: "0rem",
             background: "#f2f2f2",
+            width: "15rem",
           }}
           control={<Checkbox />}
           label="Hide Consumed Products"
-          onChange={(event) => handleHideConsumed()}
+          onChange={() => props.controlHideConsumed()}
         />
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <FormControlLabel
+          style={{
+            padding: "0.5rem",
+            marginLeft: "0rem",
+            background: "#f2f2f2",
+            width: "15rem",
+          }}
+          control={<Checkbox />}
+          label="Hide Disposed Products"
+          onChange={() => props.controlHideDisposed()}
+        />
+        <div
+          style={{
+            //border: "solid, 1px black",
+            width: "calc(100% - 30rem - 10rem)",
+          }}
+        ></div>
+        {alertData.length > 0 ? (
+          <Button
+            //variant="outlined"
+            style={{
+              height: "3.5rem",
+              width: "10rem",
+              backgroundColor: "#fc9b9d",
+              color: "black",
+            }}
+            onClick={() => handleAlertOpen()}
+          >
+            Open Alert
+          </Button>
+        ) : null}
+      </div>
 
+      <Paper sx={{ width: "100%", marginTop: "1rem" }}>
         <TableContainer>
           <Table
             sx={{ minWidth: 750 }}
@@ -480,70 +266,58 @@ export default function EnhancedTable() {
             size={dense ? "small" : "medium"}
           >
             <EnhancedTableHead
-              numSelected={selected.length}
-              order={order}
-              orderBy={orderBy}
-              onSelectAllClick={handleSelectAllClick}
+              order={props.order}
+              orderBy={props.orderBy}
               onRequestSort={handleRequestSort}
               rowCount={rows.length}
             />
             <TableBody>
-              {visibleRows.map((row, index) => {
-                const isItemSelected = selected.includes(row.seq);
-                const labelId = `enhanced-table-checkbox-${index}`;
-
+              {rows.map((row, idx) => {
                 return (
-                  <TableRow
-                    hover
-                    //role="checkbox"
-                    aria-checked={isItemSelected}
-                    tabIndex={-1}
-                    key={row.seq}
-                    selected={isItemSelected}
-                  >
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        color="primary"
-                        checked={isItemSelected}
-                        onClick={(event) => handleClick(event, row.seq)}
-                        inputProps={{
-                          "aria-labelledby": labelId,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell
-                      component="th"
-                      id={labelId}
-                      scope="row"
-                      padding="none"
-                      align="left"
-                    >
-                      {row.seq}
+                  <TableRow hover tabIndex={-1} key={row.imageId}>
+                    <TableCell align="center">
+                      {idx + 1 + props.rowsPerPage * props.page}
                     </TableCell>
                     <TableCell align="center">{row.imageId}</TableCell>
-                    <TableCell align="left">{row.fruitType}</TableCell>
-                    <TableCell align="left">{row.uploadTime}</TableCell>
-                    <TableCell align="left">{row.humidity}</TableCell>
-                    <TableCell align="left">{row.temperature}</TableCell>
-                    <TableCell align="left">{row.purchaseDate}</TableCell>
-                    <TableCell align="left">{row.expiryDate}</TableCell>
-                    <TableCell align="left">{row.consumeDate}</TableCell>
+                    <TableCell align="center">{row.fruitType}</TableCell>
+                    <TableCell align="center">{row.uploadTime}</TableCell>
+                    <TableCell align="center">{row.humidity}</TableCell>
+                    <TableCell align="center">{row.temperature}</TableCell>
+                    <TableCell align="center">{row.purchaseDate}</TableCell>
+                    <TableCell align="center">{row.expiryDate}</TableCell>
+                    <TableCell align="center">{row.daysNotify}</TableCell>
+                    <TableCell align="left">{row.consumedDate}</TableCell>
+                    <TableCell align="left">{row.disposedDate}</TableCell>
                     <TableCell align="left">
                       <Button
                         variant="outlined"
-                        onClick={(event) => viewDetails(event, row.seq)}
+                        onClick={() => viewDetails(row.seq)}
                       >
                         View
                       </Button>
                       <Button
                         variant="outlined"
-                        onClick={(event) => consumeProduct(event, row.seq)}
+                        onClick={() => handleConsumeOpen(row)}
+                        disabled={row.disposed}
                       >
                         {row.consumed ? <>Un-consume</> : <>Consume</>}
                       </Button>
                       <Button
                         variant="outlined"
-                        onClick={(event) => deleteProduct(row.seq)}
+                        disabled={row.consumed}
+                        onClick={() => handleDisposeOpen(row)}
+                      >
+                        {row.disposed ? <>Un-dispose</> : <>Dispose</>}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={() => handleModalOpen(row)}
+                      >
+                        Update Notif
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={() => props.deleteProduct(row.imageId)}
                       >
                         Delete
                       </Button>
@@ -566,9 +340,9 @@ export default function EnhancedTable() {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
+          count={props.totalItem}
+          rowsPerPage={props.rowsPerPage}
+          page={props.page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />

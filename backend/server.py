@@ -1,29 +1,32 @@
 from flask import Flask, jsonify, request
-from user import create_user, authenticate_user, edit_profile, set_current_user
-from content import process_content
-from sqlalchemy import text, desc
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text, desc
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
+from datetime import datetime, timedelta
 from datetime import datetime, timedelta
 import uuid
 import shutil
 import os
 from weather import get_temperature, get_humidity, get_current_date
+import atexit
+from flask_apscheduler import APScheduler
 
-contentdb = "backend/content/" # Folder stores all the image/video files
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+DEFAULT_PICTURE_PATH = 'Asset/Default.png'
 
 app = Flask(__name__)
 # Add databse
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# add secret key
+# add secret key TODO CHANGE THE KEY
 app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
-app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 24}
+app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 5}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
 app.config['DEFAULT_ROLES_DISABLED'] = True
-# Initalise the database, JWT token libray and CORS
+app.config['SCHEDULER_API_ENABLED'] = True
+# Initalise the database, JWT token libray, CORS and Scheduler
 db = SQLAlchemy()
 guard = Praetorian()
 cors = CORS()
@@ -34,9 +37,7 @@ class users(db.Model):
     username = db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
-    alert_day = db.Column(db.Integer)
-    pfp_id = db.Column(db.Integer)
-    remarks = db.Column(db.String(200))
+    profile_picture = db.Column(db.LargeBinary, default = None)
 
     @classmethod
     def lookup(cls, username):
@@ -50,7 +51,7 @@ class users(db.Model):
     def identity(self):
         return self.id
     
-    @property # the library needs rolenames even when disabled in the config
+    @property # Praetorian library requires roles for tokens even when roles are disabled in config
     def rolenames(self):
         return []
 
@@ -62,12 +63,16 @@ class images(db.Model):
     feedback = db.Column(db.Integer)
     upload_date = db.Column(db.DateTime, default=datetime.now(), nullable = False)
     purchase_date = db.Column(db.DateTime)
-    consume_date = db.Column(db.DateTime)
+    consumed = db.Column(db.Boolean, default=False)
+    consume_date = db.Column(db.DateTime, default=None)
     fruit = db.Column(db.String(20))
     temperature = db.Column(db.Integer)
     humidity =  db.Column(db.Integer)
-    path = db.Column(db.String(100))
-    consumed = db.Column(db.Boolean)
+    notification_days = db.Column(db.Integer, default=0)
+    disposed = db.Column(db.Boolean, default=False)
+    dispose_date = db.Column(db.DateTime, default=None)
+    data = db.Column(db.LargeBinary)
+    notified = db.Column(db.Boolean, default = False)
 
     def __repr__(self):
         return '<PID %r>' % self.pid
@@ -92,18 +97,61 @@ guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
 
+# Checks if the token has been logged out
 def isTokenInBlacklist(token):
-    dbToken = token_blacklist.query.get(token)
+    dbToken = token_blacklist.query.filter_by(token=token).one_or_none()
     if dbToken is None:
         return False
     return True
+
+# Checks if the file is in correct format
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# SCHEDULED FUNCTIONS ----------------------------------------------------------------------------------
+@scheduler.task('interval', id='blacklist', hours = 2)
+def ClearBlacklist():
+    with scheduler.app.app_context():
+        query = token_blacklist.query.all()
+        counter = 0
+        for token in query:
+            if token.expiry_date < datetime.now():
+                db.session.delete(token)
+                db.session.commit()
+                counter += 1
+        print(f"{counter} Tokens cleared from the blacklist")
+
+@scheduler.task('interval', id='Alert', hours = 6) # 6 hours
+def EmailAlert():
+    with scheduler.app.app_context():
+        query = images.query.all()
+        for image in query:
+            if image.prediction:
+                if image.upload_date + timedelta(days=image.prediction) < datetime.now() + timedelta(days=image.notification_days):
+                    if image.notified is False:
+                        image.notified = True
+                        db.session.commit()
+                        email = users.query.filter_by(id = image.id).first().email
+                        print(f"To {email} {image.fruit} is expiring")
+            
+                
+    
+
+
 
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
 def user_register():
     """
-    Route to create a new user
-    return: Success/Error message, Success/Error code
+    Route to create and login new user
+    Args:
+        email(string): Email of the user
+        name(string): Username of the user
+        password(string): Password of the user
+        passwordconfirmation(string): Repeat of user's password for confirmation
+
+    return: JWT token for authentication
     """
     user_data = request.json
     user_email = user_data.get("email")
@@ -129,9 +177,10 @@ def user_register():
         user_id = str(uuid.uuid4())
         id_query = users.query.filter_by(id=user_id).first()
 
+    with open(DEFAULT_PICTURE_PATH, 'rb' ) as file:
+        blobdata = file.read()
 
-
-    user = users(id=user_id, username=user_name, email=user_email, password=user_password, alert_day=None, pfp_id=None, remarks=None)
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, profile_picture=blobdata)
     db.session.add(user)
     db.session.commit()
     
@@ -147,12 +196,19 @@ def user_register():
 def user_login():
     """
     Route for user login
-    return:
+    Args:
+        email(string): Email of the user
+        password(string): password of the user
+
+    return: JWT token for authentication
     """
+    
+    # Retrieving request data
     user_data = request.json
     user_email = user_data.get("email")
     user_password = user_data.get("password")
 
+    # Query database for matching email and password pair
     user = users.query.filter_by(email=user_email,password=user_password).first()
     # all_users = users.query.all()
     # for user in all_users:
@@ -161,48 +217,66 @@ def user_login():
     if user is not None:
         ret = {'access_token': guard.encode_jwt_token(user)}
         return jsonify(ret), 200
+    
     return "Email or Password Incorrect", 401
 
 
-# TODO add profile picture addtion # Assuming email is auto filled and can be changed
-# TODO should return remarks and pfp as well
+# Under the assumption that email can not be changed
 @app.route('/profile', methods=['GET', 'POST'])
 @auth_required
 def view_profile():
     """
-    Route for editing user profile
-    return:
+    Route for getting and editing the user profile
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN> 
+
+     POST Args:
+        password(string): Password of the user
+        newpassword(string): New password of the user
+        newpasswordconfirmation(string): Repeat of user's new password for confirmation
+
+    return: 
+        GET: Returns current user email
+        POST: Returns new password(FOR TESTING)
     """
+
+    # Checks if the user's token is blacklisted via logout
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
     
+    
     id = current_user_id()
+
+
     if request.method == 'GET':
+        # Queries and returns profile data that should be autofilled
         user = users.query.get_or_404(id)
-        return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
+        return {"email":user.email}, 200
     else:
+        # Retrieving request data
         profile_input = request.json
         # user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
-        alert_day = profile_input.get("day")
-        remarks = profile_input.get("remarks")
 
         user = users.query.get_or_404(id)
 
-        # if user.password != user_password:
-        #     return "Passwords do not match", 401
+        # Checks if password given matches password in DB
+        if user.password != user_password:
+            return "Passwords do not match", 401
 
+        # Checks if new passwords are not empty and match before changing the users password in DB
         if new_password is not None and new_password_confirmation is not None:
             if new_password != new_password_confirmation:
                 return "new password does not match", 400
             user.password = new_password
-        if user.remarks != remarks:
-            user.remarks = remarks
-        user.alert_day = alert_day
+
+
         db.session.commit()
 
-        return {"new_password": user.password, "new_remark": user.remarks, "alert_day": user.alert_day},200
+        return "Password changed",200
 
 
 @app.route('/logout', methods=['POST'])
@@ -210,142 +284,188 @@ def view_profile():
 def user_logout():
     """
     Route for user logout
-    return:
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    return: Logout message and status code
     """
-    # BlackToken = token_blacklist(token=guard.read_token_from_header(),expiry_date=datetime.fromtimestamp(guard.extract_jwt_token(guard.read_token_from_header())['exp']))
-    # db.session.add(BlackToken)
-    # db.session.commit()
-    return jsonify({"message": "You have been logged out"}), 200
-    # return "You have been logged out", 200
+
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is already logged out", 401
+    # Stores the token and its expiry date in the DB to prevent use unauthorized use of old tokens
+    BlackToken = token_blacklist(token=guard.read_token_from_header(),expiry_date=datetime.fromtimestamp(guard.extract_jwt_token(guard.read_token_from_header())['exp']))
+    db.session.add(BlackToken)
+    db.session.commit()
+
+    return "You have been logged out", 200
 
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
-@app.route('/prediction', methods=['POST'])
+@app.route('/profile/picture/view', methods=['GET']) 
+@auth_required
+def get_picture():
 
-def add_content():
-    # Test: Add entry to image database. 
+    """
+    Route to view profile picture
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    return: image
+    """
+
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
     
-    image = images(pid=0, id=0, prediction=5, feedback=3,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
-                   fruit="Apple", temperature="24", humidity="40", path="backend/content", consumed=False)
-    db.session.add(image)
+    id = current_user_id()
+
+    # Queries and returns profile data that should be autofilled
+    user = users.query.get_or_404(id)
+    return user.profile_picture
+
+
+@app.route('/profile/picture', methods=['POST']) 
+@auth_required
+def add_picture():
+    """
+    Route to add a new profile picture
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    Args:
+        file(file): Password of the user
+
+
+    return: image
+    """
+    # Checks if the user's token is blacklisted via logout
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+    
+    
+    id = current_user_id()
+
+    file = request.files["file"]
+    user = users.query.filter_by(id=id)
+    user.profile_picture = file.read()
     db.session.commit()
 
-    image = images(pid=1, id=0, prediction=3, feedback=4,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
-                   fruit="Orange", temperature="40", humidity="10", path="backend/content", consumed=False)
-    db.session.add(image)
-    db.session.commit()
+    return user.profile_picture
 
-    image = images(pid=2, id=0, prediction=6, feedback=9,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
-                   fruit="Grape", temperature="15", humidity="33", path="backend/content", consumed=True)
-    db.session.add(image)
-    db.session.commit()
-
-    image = images(pid=3, id=1, prediction=6, feedback=9,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
-                   fruit="Grape", temperature="15", humidity="33", path="backend/content", consumed=True)
-    db.session.add(image)
-    db.session.commit()
-
-    image = images(pid=4, id=0, prediction=8, feedback=22,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = datetime.now(), 
-                   fruit="Apple", temperature="3", humidity="40", path="backend/content", consumed=True)
-    db.session.add(image)
-    db.session.commit()
-
-    image = images(pid=5, id=0, prediction=1, feedback=2,
-                   upload_date=datetime.now(), purchase_date = datetime.now(), consume_date = None, 
-                   fruit="Bananna", temperature="6", humidity="30", path="backend/content", consumed=False)
-    db.session.add(image)
-    db.session.commit()
-
+@app.route('/prediction', methods=['POST'])
+@auth_required
+def add_content():
     """
     Route to add a new photo/video
-    return: Prediction Date
-    """
-    """
-    content_data = request.json
-    file = content_data.get("file")
-    fruit_type = content_data.get("fruittype")
-    location = content_data.get("location")
-    refrigeration = content_data.get("refrigeration")
-    purchase_date = content_data.get("purchasedate")
 
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    Args:
+        file(file): Password of the user
+        newpassword(string): New password of the user
+        newpasswordconfirmation(string): Repeat of user's new password for confirmation
+
+
+    return: Status code
+    """
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401    
+    
+    # Retrieve data from request
+    file = request.files["file"]
+    fruit_type = request.form.get("fruittype")
+    location = request.form.get("location")
+    refrigerated = bool(request.form.get("refrigerated"))
+    
+    # Checks if the file exists
+    if file.filename == "":
+        return "Upload a file", 400
+    
+    # Checks if image is in wrong format
+    if not allowed_file(file.filename):
+        return "Upload png or jpeg image only", 400
+    
     # Generate new image id
-    image_id = str(uuid.uuid4())
+    image_id = uuid.uuid4().int & (1<<32) -1
     # Check if the uid is already in the database
     pid_query = images.query.filter_by(pid=image_id).first()
     while pid_query is not None:
-        image_id = str(uuid.uuid4())
+        image_id = uuid.uuid4().int & (1<<32) -1
         pid_query = images.query.filter_by(pid=image_id).first()
+    
+    
+    # Get temperature and humidity from weather api from city 
+    if refrigerated:
+        temperature = 3
+        humidity = 40
+    else:
+        temperature = get_temperature(location.lower())
+        humidity = get_humidity(location.lower())
 
-    # Save image/video to content folder
-    file_name, file_type = os.path.splitext(file)
-    content_path = contentdb + str(image_id) + file_type
-    shutil.copy(file, content_path)
 
-    # Send content to AI
-    temperature = None
-    if refrigeration: temperature = refrigeration
-    else: temperature = get_temperature(location)
-
-    humidity = get_humidity(location)
-    predicted_expiry = None # Add connection to AI here (update database when reply from AI and let the user refresh on front end)
+    predicted_expiry = None # Create a thread to call the AI engine while the rest of the data gets sent to db
 
     # Add image metadata to database
-    image = images(pid=image_id, prediction=predicted_expiry, feedback=None,
-                   upload_date=get_current_date(location), fruit=fruit_type,
-                   temperature=temperature, humidity=humidity, path=content_path,
-                   consumed=False, id=current_user.id)
+    image = images(pid = image_id,
+    id = current_user_id(), 
+    prediction = None,
+    feedback = None,
+    upload_date = datetime.now(),
+    purchase_date = None,
+    consume_date = None,
+    fruit = fruit_type.lower(),
+    temperature = temperature,
+    humidity =  humidity,
+    consumed = False,
+    data = file.read())
+
     db.session.add(image)
     db.session.commit()
 
-    return jsonify({"prediction":predicted_expiry})
-    
-#----------------------------------------------------------------------------
-    image = images(pid = 12,id = current_user.id, prediction = None, feedback = None,
-    upload_date = datetime.now(), purchase_date = None,
-    consume_date = None,
-    fruit = None,
-    temperature = None,
-    humidity =  None,
-    path = None,
-    consumed = None)
-    db.session.add(image)
-    db.session.commit()
-"""
-    return "created", 200
+    return f"Uploaded {file.filename}",200
+
 
 
 @app.route('/history', methods=['GET'])
-
 def get_user_records():
     """
     Route to get all images/videos posted by the user
-    return:
+    return: List of Dictionaries
     """
-    # Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
+    # Previous Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
+    # Updated Example: /history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc
     query = request.args.to_dict(flat=False)
 
-    uid = 0 # User id hardcoded.
-    if query["filter"][0] == "hide": 
+    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
+    if query["consumed"][0] == "hide": 
         filters = images.query.filter_by(id=uid, consumed=False)
     else:
         filters = images.query.filter_by(id=uid)
 
+    if query["disposed"][0] == "hide": 
+        filters = filters.filter_by(id=uid, disposed=False)
+
+    count = filters.count()
     
     order_with = None
     match query["sort"][0]:
-        case "imageid": order_with = "pid"
-        case "fruittype": order_with = "fruit"
-        case "uploadtime": order_with = "upload_date"
+        case "imageId": order_with = "pid"
+        case "fruitType": order_with = "fruit"
+        case "uploadTime": order_with = "upload_date"
         case "humidity": order_with = "humidity"
         case "temperature": order_with = "temperature"
-        case "purchasedate": order_with = "purchase_date"
-        case "expirydate": order_with = "prediction"
-        case "consumedate": order_with = "consume_date"
+        case "purchaseDate": order_with = "purchase_date"
+        case "expiryDate": order_with = "prediction"
+        case "daysNotify": order_with = "notification_days"
+        case "consumeDate": order_with = "consume_date"
+        case "disposeDate": order_with = "dispose_date"
     
     if query["order"][0] == "desc": 
         filters = filters.order_by(desc(text(order_with)))
@@ -355,16 +475,16 @@ def get_user_records():
 
     offset = (int(query["page"][0])-1)*int(query["size"][0])
     filters = filters.offset(offset).limit(int(query["size"][0]))
-    
 
-    counter = 1
     result = []
     for image in filters.all():
         # Convert prediction(integer days) to a date
-        prediction = image.upload_date + timedelta(days=image.prediction)
+        if image.prediction:
+            prediction = image.upload_date + timedelta(days=image.prediction)
+        else: 
+            prediction = None
 
         result.append({
-            "seq": counter,
             "imageId": image.pid,
             "fruitType": image.fruit,
             "uploadTime": image.upload_date,
@@ -372,42 +492,217 @@ def get_user_records():
             "temperature": image.temperature,
             "purchaseDate": image.purchase_date,
             "expiryDate": prediction,
-            "daysNotify": 0, # Hardcoded
+            "daysNotify": image.notification_days,
             "consumed": image.consumed,
-            "consumedDate": image.consume_date
+            "consumedDate": image.consume_date,
+            "disposed": image.disposed,
+            "disposedDate": image.dispose_date
             })
+
+    return jsonify(result, count)
+
+@app.route('/history/unconsume', methods=['POST'])
+def unconsume():
+    """
+    Route to change the consumed status of an image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/unconsume?imageid=1
+
+    image_id = int(request.args.get('imageid'))
+    consume_image = images.query.filter_by(pid=image_id).first()
+    if not consume_image:
+        return "Image id not found", 404
+    
+    # Check if image is already disposed
+    if consume_image.disposed:
+        return "Image already disposed. Cannot unconsume", 409
+    
+    consume_image.consume_date = None
+    consume_image.consumed = not consume_image.consumed
+    db.session.commit()
+
+    return "Image consumption status changed", 200
+
+@app.route('/history/consume', methods=['POST'])
+def consume():
+    """
+    Route to directly change the consumed date of the image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/consume?imageid=4&days=4
+
+    image_id = int(request.args.get('imageid'))
+    consume_image = images.query.filter_by(pid=image_id).first()
+    if not consume_image:
+        return "Image id not found", 404
+
+    # Check if image is already disposed
+    if consume_image.disposed:
+        return "Image already disposed. Cannot consume", 409
+    
+    # Change the consumed date to todays date minus days
+    days_ago = int(request.args.get('days'))
+    consume_image.consume_date = datetime.now() - timedelta(days_ago)
+
+    consume_image.consumed = True
+    db.session.commit()
+
+    return "Image consumption date changed", 200
+
+@app.route('/history/undispose', methods=['POST'])
+def undispose():
+    """
+    Route to change the disposed status of an image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/undispose?imageid=1
+
+    image_id = int(request.args.get('imageid'))
+    dispose_image = images.query.filter_by(pid=image_id).first()
+    if not dispose_image:
+        return "Image id not found", 404
+
+    # Check if image is already consumed
+    if dispose_image.consumed:
+        return "Image already consumed. Cannot undispose", 409
+    
+    dispose_image.dispose_date = None
+    dispose_image.disposed = not dispose_image.disposed
+    db.session.commit()
+
+    return "Image disposed status changed", 200
+
+@app.route('/history/dispose', methods=['POST'])
+def dispose():
+    """
+    Route to directly change the disposed date of the image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/dispose?imageid=4&days=4
+
+    image_id = int(request.args.get('imageid'))
+    dispose_image = images.query.filter_by(pid=image_id).first()
+    if not dispose_image:
+        return "Image id not found", 404
+
+    # Check if image is already consumed
+    if dispose_image.consumed:
+        return "Image already consumed. Cannot dispose", 409
+    
+    # Change the consumed date to todays date minus days
+    days_ago = int(request.args.get('days'))
+    dispose_image.dispose_date = datetime.now() - timedelta(days_ago)
+
+    dispose_image.disposed = True
+    db.session.commit()
+
+    return "Image disposed date changed", 200
+
+@app.route('/history/notification', methods=['POST'])
+def notification_days():
+    """
+    Route to change expiry notification days for an image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/notification?imageid=1&days=1
+
+    image_id = int(request.args.get('imageid'))
+    selected_image = images.query.filter_by(pid=image_id).first()
+    if not selected_image:
+        return "Image id not found", 404
+
+    selected_image.notification_days = int(request.args.get('days'))
+    db.session.commit()
+
+    return "Notification days changed", 200
+
+@app.route('/history/delete', methods=['DELETE'])
+def delete():
+    """
+    Route to delete a selected image
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/delete?imageid=1
+
+    image_id = int(request.args.get('imageid'))
+    delete_image = images.query.filter_by(pid=image_id).first()
+    if not delete_image:
+        return "Image id not found", 404
+
+    db.session.delete(delete_image)
+    db.session.commit()
+
+    return "Image Deleted", 200
+
+@app.route('/history/alert', methods=['GET'])
+def alert():
+    """
+    Route to get nearly expired products from database for history page popup
+    return: 200 for success, 404 if imageid not found
+    """
+
+    # Example usage: /history/alert
+
+    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
+
+    # Get all not consumed images
+    non_consumed = images.query.filter_by(id=uid, consumed=False, disposed=False)
+
+    counter = 1
+    result = []
+    for image in non_consumed.all():
+        # Convert prediction(integer days) to a date
+        prediction = image.upload_date + timedelta(days=image.prediction)
+
+        # If [today's date] is within [[expiry date] minus [notification days]] and [expiry date]
+        if (prediction - timedelta(days=image.notification_days)) <= datetime.now() <= prediction:
+            result.append({
+                "seq": counter,
+                "imageId": image.pid,
+                "fruitType": image.fruit,
+                "uploadTime": image.upload_date,
+                "humidity": image.humidity,
+                "temperature": image.temperature,
+                "purchaseDate": image.purchase_date,
+                "expiryDate": prediction,
+                "daysNotify": image.notification_days,
+                })
 
         counter += 1
 
     return result
 
-    # Get all history
 
-    # image_query = images.query.filter_by(pid=pid).first()
-
-    # View button (Return path to image in content folder)
-    # image_path = image_query.path
-
-    # Consume/Unconsume button
-    # image_query.consumed = not image_query.consumed
-    # db.session.commit()
-
-
-    # Delete button
-    # db.session.delete(image_query)
-    # db.session.commit()
-
+@app.route('/image', methods=['GET'])
+def get_image():
+    image = images.query.filter_by(pid=1219339313).first()
+    return image.data
 
 @app.route('/history', methods=['POST'])
+@auth_required
 def add_feedback():
     """
     Route to add feedback expiry date
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
     return:
     """
-
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+    
     return
 
 
-
+atexit.register(lambda: scheduler.shutdown(wait=False))
 if __name__ == '__main__':
     app.run(port=5005)
