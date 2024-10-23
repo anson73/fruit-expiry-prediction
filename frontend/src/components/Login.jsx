@@ -30,29 +30,33 @@ export default function Login(props) {
   }, [props.token]);
 
   const login = async () => {
-    //const response = await fetch("http://localhost:5005/login", {
-    //  method: "POST",
-    //  body: JSON.stringify({
-    //    email,
-    //    password,
-    //  }),
-    //  headers: {
-    //    "Content-type": "application/json",
-    //  },
-    //});
-    //const data = await response.json();
-    //if (data.error) {
-    //  alert(data.error);
-    //} else if (data.token) {
-    //  console.log(data);
-    //  localStorage.setItem("token", data.token);
-    //  localStorage.setItem("email", email);
-    //  props.setToken(data.token);
-    //  navigate("/hostings");
-    //}
-    props.setToken("000000");
-    localStorage.setItem("token", "0000000");
-    navigate("/history");
+    console.log(email, password);
+    try {
+      const response = await fetch("http://localhost:5005/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+        headers: {
+          "Content-type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        alert(data.error);
+      } else if (data.access_token) {
+        console.log(data);
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("email", email);
+        props.setToken(data.access_token);
+        navigate("/history");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+    }
   };
 
   const Cancel = () => {

@@ -1,7 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
-import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
@@ -13,44 +11,92 @@ import FormControl from "@mui/material/FormControl";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Button from "@mui/material/Button";
-import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 const Profile = () => {
   const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
   const [daysNotify, setDaysNotify] = React.useState(3);
   const [newPassword, setNewPassword] = React.useState("");
   const [newPasswordConfirmed, setNewPasswordConfirmed] = React.useState("");
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = React.useState(false);
+  const [image, setImage] = React.useState(null);
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:5005/profile", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setEmail(data.email);
+          setDaysNotify(data.alert_day);
+        } else {
+          console.error("Failed to fetch profile data");
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
-  const [image, setImage] = React.useState(null)
-  const handleImageUpdate = (event) => {
-    const file = event.target.files[0]
-    if (file) {
-      const url = URL.createObjectURL(file)
-      setImage(url)
-    }
-  }
 
-  const Submit = () => {
-    navigate("/history");
+  const handleImageUpdate = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setImage(url);
+    }
   };
 
-  const Cancel = () => {
+  const handleSubmit = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5005/profile", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          newpassword: newPassword,
+          newpasswordconfirmation: newPasswordConfirmed,
+          day: daysNotify,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Profile updated:", data);
+        navigate("/history");
+      } else {
+        console.error("Profile update failed");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  const handleCancel = () => {
     navigate("/history");
   };
 
   return (
     <div
       style={{
-        //border: "1px solid black",
-        padding: "3rem 0rem",
-        //width: "80%",
-        //maxWidth: "20rem",
+        padding: "10rem 0rem",
         display: "flex",
         alignItems: "center",
         flexDirection: "column",
@@ -63,124 +109,100 @@ const Profile = () => {
           "& > :not(style)": {
             m: 1,
             width: "90%",
-            //maxWidth: "20rem",
           },
         }}
         noValidate
         autoComplete="off"
         style={{
-          //border: "1px solid red",
-          //height: "80%",
           width: "80%",
           maxWidth: "30rem",
           display: "flex",
           alignItems: "center",
-          //justifyContent: "center",
           flexDirection: "column",
           backgroundColor: "#ffffff",
         }}
       >
         <Avatar
-          alt="Remy Sharp"
-          src= {image}
+          alt="Profile Image"
+          src={image}
           style={{ width: "15rem", height: "15rem" }}
         />
         <Button
-            variant="contained"
-            component="label"
-            fullWidth
-            startIcon={<CloudUploadIcon />}
-            sx={{ marginTop: 1 }}>
-            Upload Avatar
-            <input type="file" hidden onChange={handleImageUpdate} />
-          </Button>
-          
+          variant="contained"
+          component="label"
+          fullWidth
+          startIcon={<CloudUploadIcon />}
+          sx={{ marginTop: 1 }}
+        >
+          Upload Avatar
+          <input type="file" hidden onChange={handleImageUpdate} />
+        </Button>
+
         <TextField
           id="email"
           required
           label="Email"
           variant="outlined"
-          value={email}
+          value={email || ""}
           onChange={(e) => setEmail(e.target.value)}
         />
+
         <FormControl variant="outlined" required>
-          <InputLabel htmlFor="outlined-adornment-password">
-            Password
-          </InputLabel>
+          <InputLabel>New Password</InputLabel>
           <OutlinedInput
-            id="outlined-adornment-password"
-            data-testid="outlined-adornment-password"
             type={showPassword ? "text" : "password"}
-            endAdornment={
-              <InputAdornment position="end">
-                <IconButton aria-label="toggle password visibility" edge="end">
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            }
-            label="Password"
-            value={password}
-            required={true}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </FormControl>
-        <FormControl variant="outlined" required>
-          <InputLabel htmlFor="outlined-adornment-password">
-            New Password
-          </InputLabel>
-          <OutlinedInput
-            id="outlined-adornment-password"
-            data-testid="outlined-adornment-password"
-            type={showPassword ? "text" : "password"}
-            endAdornment={
-              <InputAdornment position="end">
-                <IconButton aria-label="toggle password visibility" edge="end">
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            }
-            label="New Password"
-            value={newPassword}
-            required={true}
+            value={newPassword || ""}
             onChange={(e) => setNewPassword(e.target.value)}
-          />
-        </FormControl>
-        <FormControl variant="outlined" required>
-          <InputLabel htmlFor="outlined-adornment-password">
-            New Password Confirmation
-          </InputLabel>
-          <OutlinedInput
-            id="outlined-adornment-password"
-            data-testid="outlined-adornment-password"
-            type={showPassword ? "text" : "password"}
             endAdornment={
               <InputAdornment position="end">
-                <IconButton aria-label="toggle password visibility" edge="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={handleClickShowPassword}
+                  onMouseDown={handleMouseDownPassword}
+                  edge="end"
+                >
                   {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
             }
-            label="New Password Confirmation"
-            value={newPasswordConfirmed}
-            required={true}
-            onChange={(e) => setNewPasswordConfirmed(e.target.value)}
           />
         </FormControl>
+
+        <FormControl variant="outlined" required>
+          <InputLabel>New Password Confirmation</InputLabel>
+          <OutlinedInput
+            type={showPassword ? "text" : "password"}
+            value={newPasswordConfirmed || ""}
+            onChange={(e) => setNewPasswordConfirmed(e.target.value)}
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={handleClickShowPassword}
+                  onMouseDown={handleMouseDownPassword}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            }
+          />
+        </FormControl>
+
         <TextField
           id="notificationTime"
           required
           label="Notify Days before Expiry"
           variant="outlined"
+          type="number"
+          value={daysNotify || ""}
+          onChange={(e) => setDaysNotify(e.target.value)}
         />
-        <textarea
-          name="postContent"
-          defaultValue="Profile Remarks..."
-          rows="10"
-        />
-        <Button variant="outlined" id="submit" onClick={Submit}>
+
+        <Button variant="outlined" onClick={handleSubmit}>
           Submit
         </Button>
-        <Button variant="outlined" id="cancel" onClick={Cancel}>
+        <Button variant="outlined" onClick={handleCancel}>
           Cancel
         </Button>
       </Box>

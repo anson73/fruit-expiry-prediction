@@ -40,30 +40,33 @@ export default function Register(props) {
   }, [props.token]);
 
   const Register = async () => {
-    //const response = await fetch("http://localhost:5005/user/auth/register", {
-    //  method: "POST",
-    //  body: JSON.stringify({
-    //    email,
-    //    password,
-    //    name,
-    //  }),
-    //  headers: {
-    //    "Content-type": "application/json",
-    //  },
-    //});
-    //const data = await response.json();
-    //if (data.error) {
-    //  alert(data.error);
-    //} else if (data.token) {
-    //  console.log(data);
-    //  localStorage.setItem("token", data.token);
-    //  localStorage.setItem("email", email);
-    //  props.setToken(data.token);
-    //  navigate("/hostings");
-    //}
-    props.setToken("000000");
-    localStorage.setItem("token", "0000000");
-    navigate("/profile");
+    try {
+      const response = await fetch("http://localhost:5005/register", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          passwordconfirmation: passwordConfirmation,
+          name,
+        }),
+        headers: {
+          "Content-type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.status === 400 || response.status === 409) {
+        alert(data);
+      } else if (response.status === 201 && data.access_token) {
+        console.log(data);
+        localStorage.setItem("token", data.access_token);
+        props.setToken(data.access_token);
+        navigate("/profile");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+    }
   };
 
   const Cancel = () => {
