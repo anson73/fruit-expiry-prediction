@@ -30,6 +30,7 @@ app.config['SCHEDULER_API_ENABLED'] = True
 db = SQLAlchemy()
 guard = Praetorian()
 cors = CORS()
+scheduler = APScheduler()
 
 # Create database model (add authentication session token)
 class users(db.Model):
@@ -280,7 +281,6 @@ def view_profile():
 
 
 @app.route('/logout', methods=['POST'])
-
 def user_logout():
     """
     Route for user logout

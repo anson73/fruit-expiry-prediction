@@ -28,27 +28,23 @@ const PageList = () => {
   }, []);
 
   const logout = async () => {
-    //const response = await fetch("http://localhost:5005/user/auth/logout", {
-    //  method: "POST",
-    //  body: JSON.stringify({}),
-    //  headers: {
-    //    "Content-type": "application/json",
-    //    Authorization: `Bearer ${token}`,
-    //  },
-    //});
-    //const data = await response.json();
-    //if (data.error) {
-    //  alert(data.error);
-    //} else {
-    //  setToken(null);
-    //  localStorage.removeItem("token");
-    //  localStorage.removeItem("email");
-    //  navigate("/listings");
-    //  // console.log('logged out');
-    //}
-    setToken(null);
-    localStorage.removeItem("token");
-    navigate("/landpage");
+    const response = await fetch("http://localhost:5005/logout", {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response;
+    console.log(data);
+    if (data.status !== 200) {
+      console.log("Logout Error");
+    } else {
+      setToken(null);
+      localStorage.removeItem("token");
+      localStorage.removeItem("email");
+      navigate("/landpage");
+    }
   };
 
   const pages = token
@@ -66,7 +62,10 @@ const PageList = () => {
       >
         <Routes>
           <Route path="/" element={<Landpage />} />
-          <Route path="/history" element={<History />} />
+          <Route
+            path="/history"
+            element={<History token={token} setToken={setToken} />}
+          />
           <Route path="/prediction" element={<Prediction />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/landpage" element={<Landpage />} />
