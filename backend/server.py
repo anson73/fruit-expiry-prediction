@@ -98,6 +98,9 @@ with app.app_context():
 guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
+# Initalizes Background scheduler
+scheduler.init_app(app)
+scheduler.start()
 
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
