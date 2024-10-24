@@ -454,16 +454,19 @@ def add_content():
 
 
 @app.route('/history', methods=['GET'])
+@auth_required
 def get_user_records():
     """
+    # Example: /history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc
     Route to get all images/videos posted by the user
     return: List of Dictionaries
     """
-    # Previous Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
-    # Updated Example: /history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+
     query = request.args.to_dict(flat=False)
 
-    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
+    uid = current_user_id() # Get User ID
     if query["consumed"][0] == "hide": 
         filters = images.query.filter_by(id=uid, consumed=False)
     else:
@@ -662,15 +665,17 @@ def delete():
     return "Image Deleted", 200
 
 @app.route('/history/alert', methods=['GET'])
+@auth_required
 def alert():
     """
+    # Example usage: /history/alert
     Route to get nearly expired products from database for history page popup
     return: 200 for success, 404 if imageid not found
     """
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
 
-    # Example usage: /history/alert
-
-    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
+    uid = current_user_id() # Get User ID
 
     # Get all not consumed images
     non_consumed = images.query.filter_by(id=uid, consumed=False, disposed=False)
