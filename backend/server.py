@@ -11,6 +11,7 @@ import os
 from weather import get_temperature, get_humidity, get_current_date
 import atexit
 from flask_apscheduler import APScheduler
+from flask_mailman import Mail, EmailMessage
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 DEFAULT_PICTURE_PATH = 'Asset/Default.png'
@@ -26,11 +27,20 @@ app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
 app.config['DEFAULT_ROLES_DISABLED'] = True
 app.config['SCHEDULER_API_ENABLED'] = True
+# Mail config
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'digitalhaven42@gmail.com' 
+app.config['MAIL_PASSWORD'] = 'zgrk rcew cjif cosb'     #TODO: remove key from acc and abstract
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+
 # Initalise the database, JWT token libray, CORS and Scheduler
 db = SQLAlchemy()
 guard = Praetorian()
 cors = CORS()
 scheduler = APScheduler()
+mail = Mail()
 
 # Create database model (add authentication session token)
 class users(db.Model):
@@ -101,6 +111,8 @@ cors.init_app(app)
 # Initalizes Background scheduler
 scheduler.init_app(app)
 scheduler.start()
+# Initalizer mailer
+mail.init_app(app)
 
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
@@ -130,15 +142,26 @@ def ClearBlacklist():
 @scheduler.task('interval', id='Alert', hours = 6) # 6 hours
 def EmailAlert():
     with scheduler.app.app_context():
+        print(f"Scheduled Mailing Cycle Started")
+        counter = 0
         query = images.query.all()
         for image in query:
             if image.prediction:
-                if image.upload_date + timedelta(days=image.prediction) < datetime.now() + timedelta(days=image.notification_days):
+                if image.upload_date + timedelta(days=image.prediction) <= datetime.now() + timedelta(days=image.notification_days):
                     if image.notified is False:
                         image.notified = True
+                        counter += 1
                         db.session.commit()
                         email = users.query.filter_by(id = image.id).first().email
-                        print(f"To {email} {image.fruit} is expiring")
+                        msg = EmailMessage(
+                            "Expiry Alert",
+                            f"{image.fruit.title()} is about to expire in {((image.upload_date + timedelta(days=image.prediction)) - datetime.now()).days} days",
+                            "digitalhaven42@gmail.com",
+                            [f"{email}"]
+                        )
+                        msg.send()
+                        print(f"mailsent to {email}")
+        print(f"Scheduled Mailing Cycle Finished")
             
                 
     
