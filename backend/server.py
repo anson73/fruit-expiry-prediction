@@ -113,7 +113,7 @@ scheduler.init_app(app)
 scheduler.start()
 # Initalizer mailer
 mail.init_app(app)
-
+#HELPER FUNCTIONS --------------------------------------------------------------------------------------
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
     dbToken = token_blacklist.query.filter_by(token=token).one_or_none()
@@ -126,6 +126,9 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def Temp_formula(temp, humidity, prd):
+
+    return 0
 # SCHEDULED FUNCTIONS ----------------------------------------------------------------------------------
 @scheduler.task('interval', id='blacklist', hours = 2)
 def ClearBlacklist():
@@ -319,6 +322,7 @@ def view_profile():
 
 
 @app.route('/logout', methods=['POST'])
+@auth_required
 def user_logout():
     """
     Route for user logout
