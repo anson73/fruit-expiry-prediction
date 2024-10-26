@@ -4,11 +4,8 @@ from sqlalchemy import text, desc
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
 from datetime import datetime, timedelta
-from datetime import datetime, timedelta
 import uuid
-import shutil
-import os
-from weather import get_temperature, get_humidity, get_current_date
+from weather import get_temperature, get_humidity
 import atexit
 from flask_apscheduler import APScheduler
 from flask_mailman import Mail, EmailMessage
@@ -424,8 +421,9 @@ def add_content():
     # Retrieve data from request
     file = request.files["file"]
     fruit_type = request.form.get("fruittype")
-    location = request.form.get("location")
-    refrigerated = bool(request.form.get("refrigerated"))
+    latitude = request.form.get("latitude")
+    longitude = request.form.get("longitude")
+    refrigerated = eval(request.form.get("refrigerated"))
     
     # Checks if the file exists
     if file.filename == "":
@@ -449,8 +447,8 @@ def add_content():
         temperature = 3
         humidity = 40
     else:
-        temperature = get_temperature(location.lower())
-        humidity = get_humidity(location.lower())
+        temperature = get_temperature(latitude, longitude)
+        humidity = get_humidity(latitude, longitude)
 
     user = users.query.filter_by(id= current_user_id()).first()
 
@@ -710,6 +708,8 @@ def alert():
     counter = 1
     result = []
     for image in non_consumed.all():
+        if not image.prediction: continue
+
         # Convert prediction(integer days) to a date
         prediction = image.upload_date + timedelta(days=image.prediction)
 
