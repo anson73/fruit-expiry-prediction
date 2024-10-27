@@ -30,7 +30,7 @@ app.config['SCHEDULER_API_ENABLED'] = True
 db = SQLAlchemy()
 guard = Praetorian()
 cors = CORS()
-
+scheduler = APScheduler() 
 # Create database model (add authentication session token)
 class users(db.Model):
     id = db.Column(db.String(100), primary_key = True)
@@ -246,37 +246,33 @@ def view_profile():
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
     
-    
     id = current_user_id()
-
-
     if request.method == 'GET':
-        # Queries and returns profile data that should be autofilled
         user = users.query.get_or_404(id)
-        return {"email":user.email}, 200
+        return {"email":user.email, "remarks":user.remarks, "alert_day": user.alert_day}, 200
     else:
-        # Retrieving request data
         profile_input = request.json
         # user_password = profile_input.get("password")
         new_password = profile_input.get("newpassword")
         new_password_confirmation = profile_input.get("newpasswordconfirmation")
+        alert_day = profile_input.get("day")
+        remarks = profile_input.get("remarks")
 
         user = users.query.get_or_404(id)
 
-        # Checks if password given matches password in DB
-        if user.password != user_password:
-            return "Passwords do not match", 401
+        # if user.password != user_password:
+        #     return "Passwords do not match", 401
 
-        # Checks if new passwords are not empty and match before changing the users password in DB
         if new_password is not None and new_password_confirmation is not None:
             if new_password != new_password_confirmation:
                 return "new password does not match", 400
             user.password = new_password
-
-
+        if user.remarks != remarks:
+            user.remarks = remarks
+        user.alert_day = alert_day
         db.session.commit()
 
-        return "Password changed",200
+        return {"new_password": user.password, "new_remark": user.remarks, "alert_day": user.alert_day},200
 
 
 @app.route('/logout', methods=['POST'])
