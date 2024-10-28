@@ -423,7 +423,7 @@ def add_content():
     fruit_type = request.form.get("fruittype")
     latitude = request.form.get("latitude")
     longitude = request.form.get("longitude")
-    refrigerated = eval(request.form.get("refrigerated"))
+    refrigerated = eval(request.form.get("refrigerated").capitalize())
     
     # Checks if the file exists
     if file.filename == "":
