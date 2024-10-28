@@ -2,6 +2,7 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Modal from "@mui/material/Modal";
+import dayjs from "dayjs";
 import Typography from "@mui/material/Typography";
 
 export default function DetailsPage(props) {
@@ -39,7 +40,7 @@ export default function DetailsPage(props) {
           <br />
           Image Id: {props.row.imageId}
           <br />
-          Purchase Date: {props.row.purchaseDate}
+          Purchase Date: {dayjs(props.row.purchaseDate).format("YYYY-MM-DD")}
           <br />
           Upload Time: {props.row.uploadTime}
           <br />
@@ -47,14 +48,35 @@ export default function DetailsPage(props) {
           <br />
           Storage Humidity: {props.row.humidity}
           <br />
-          Predicted Expiry Date: {props.row.expiryDate}
+          Predicted Expiry Date:{" "}
+          {props.row.expiryDate
+            ? props.row.expiryDate
+            : "Please wait, prediction in progress..."}
           <br />
-          Notification Time (Days before predicted expiry):
+          Notification Time (Days before predicted expiry):{" "}
           {props.row.daysNotify}
           <br />
-          Purchase Date: {props.row.purchaseDate}
+          Have the product been consumed: {props.row.consumed ? "Yes" : "No"}
+          {props.row.consumed ? (
+            <>
+              <br />
+              Consumed Date:{" "}
+              {dayjs(props.row.consumedDate).format("YYYY-MM-DD")}
+            </>
+          ) : (
+            <></>
+          )}
           <br />
-          Purchase Date: {props.row.purchaseDate}
+          Have the product been disposed: {props.row.disposed ? "Yes" : "No"}
+          {props.row.disposed ? (
+            <>
+              <br />
+              Disposed Date:{" "}
+              {dayjs(props.row.disposedDate).format("YYYY-MM-DD")}
+            </>
+          ) : (
+            <></>
+          )}
         </Typography>
         <Box
           sx={{

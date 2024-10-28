@@ -1,4 +1,5 @@
 import * as React from "react";
+import dayjs from "dayjs";
 import PropTypes from "prop-types";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
@@ -35,14 +36,6 @@ function EnhancedTableHead(props) {
       label: "Fruit Type",
     },
     {
-      id: "humidity",
-      label: "Humidity",
-    },
-    {
-      id: "temperature",
-      label: "Temperature",
-    },
-    {
       id: "purchaseDate",
       label: "Purchase Date",
     },
@@ -53,14 +46,6 @@ function EnhancedTableHead(props) {
     {
       id: "daysNotify",
       label: "Notification (Days)",
-    },
-    {
-      id: "consumeDate",
-      label: "Consumed Date",
-    },
-    {
-      id: "disposeDate",
-      label: "Disposed Date",
     },
   ];
 
@@ -91,6 +76,12 @@ function EnhancedTableHead(props) {
             </TableSortLabel>
           </TableCell>
         ))}
+        <TableCell align="center" padding="normal">
+          Status
+        </TableCell>
+        <TableCell align="center" padding="normal">
+          Date
+        </TableCell>
         <TableCell align="center" padding="normal">
           Action
         </TableCell>
@@ -157,9 +148,9 @@ export default function EnhancedTable(props) {
         method: "GET",
       }
     );
-    const data = await response.body;
-    console.log(data);
-    setModalImage(URL.createObjectURL(data));
+    const data = await response.blob();
+    const imageObjectURL = URL.createObjectURL(data);
+    setModalImage(imageObjectURL);
   }
 
   const viewDetails = async (row) => {
@@ -225,6 +216,7 @@ export default function EnhancedTable(props) {
         detailsOpen={detailsOpen}
         detailsClose={handleDetailsClose}
         row={modalRow}
+        modalImage={modalImage}
       />
 
       <div
@@ -298,14 +290,26 @@ export default function EnhancedTable(props) {
                       {idx + 1 + props.rowsPerPage * props.page}
                     </TableCell>
                     <TableCell align="center">{row.fruitType}</TableCell>
-                    <TableCell align="center">{row.humidity}</TableCell>
-                    <TableCell align="center">{row.temperature}</TableCell>
-                    <TableCell align="center">{row.purchaseDate}</TableCell>
+                    <TableCell align="center">
+                      {dayjs(row.purchaseDate).format("YYYY-MM-DD")}
+                    </TableCell>
                     <TableCell align="center">{row.expiryDate}</TableCell>
                     <TableCell align="center">{row.daysNotify}</TableCell>
-                    <TableCell align="left">{row.consumedDate}</TableCell>
-                    <TableCell align="left">{row.disposedDate}</TableCell>
-                    <TableCell align="left">
+                    <TableCell align="center">
+                      {row.consumed
+                        ? "Consumed"
+                        : row.disposed
+                        ? "Disposed"
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell align="center">
+                      {row.consumed
+                        ? row.consumedDate
+                        : row.disposed
+                        ? row.disposedDate
+                        : ""}
+                    </TableCell>
+                    <TableCell align="center">
                       <Button
                         variant="outlined"
                         onClick={() => viewDetails(row)}
