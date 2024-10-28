@@ -423,7 +423,10 @@ def add_content():
     fruit_type = request.form.get("fruittype")
     latitude = request.form.get("latitude")
     longitude = request.form.get("longitude")
-    refrigerated = eval(request.form.get("refrigerated").capitalize())
+    purchase_date = request.form.get("purchaseDate")
+    refrigerated = False
+    if request.form.get("refrigerated") == 'true':
+        refrigerated = True
     
     # Checks if the file exists
     if file.filename == "":
@@ -455,14 +458,14 @@ def add_content():
 
 
     predicted_expiry = None # Create a thread to call the AI engine while the rest of the data gets sent to db
-
+    print(purchase_date)
     # Add image metadata to database
     image = images(pid = image_id,
     id = current_user_id(), 
     prediction = None,
     feedback = None,
     upload_date = datetime.now(),
-    purchase_date = None,
+    purchase_date = datetime.strptime(purchase_date, '%Y-%m-%d').date(),
     consume_date = None,
     fruit = fruit_type.lower(),
     temperature = temperature,

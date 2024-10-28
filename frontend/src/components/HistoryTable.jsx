@@ -20,6 +20,8 @@ import NotifDates from "./NotifDates";
 import AlertTable from "./AlertTable";
 import ConsumePage from "./ConsumePage";
 import DisposalPage from "./DisposalPage";
+import DetailsPage from "./DetailsPage";
+import { useNavigate } from "react-router-dom";
 
 function EnhancedTableHead(props) {
   const { order, orderBy, onRequestSort } = props;
@@ -29,16 +31,8 @@ function EnhancedTableHead(props) {
 
   const headCells = [
     {
-      id: "imageId",
-      label: "Image ID",
-    },
-    {
       id: "fruitType",
       label: "Fruit Type",
-    },
-    {
-      id: "uploadTime",
-      label: "Upload Time",
     },
     {
       id: "humidity",
@@ -116,12 +110,14 @@ export default function EnhancedTable(props) {
   const [dense, setDense] = React.useState(false);
   const [rows, setRows] = React.useState([]);
   const [alertData, setAlertData] = React.useState([]);
-
   const [modalOpen, setModalOpen] = React.useState(false);
   const [modalRow, setModalRow] = React.useState({});
+  const [modalImage, setModalImage] = React.useState(null);
   const [alertOpen, setAlertOpen] = React.useState(false);
   const [consumeOpen, setConsumeOpen] = React.useState(false);
   const [disposeOpen, setDisposeOpen] = React.useState(false);
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     setRows(props.historyData);
@@ -154,7 +150,24 @@ export default function EnhancedTable(props) {
       ? Math.max(0, (1 + props.page) * props.rowsPerPage - rows.length)
       : 0;
 
-  const viewDetails = () => {};
+  async function getImage(imageId) {
+    const response = await fetch(
+      `http://localhost:5005/image?imageid=${imageId}`,
+      {
+        method: "GET",
+      }
+    );
+    const data = await response.body;
+    console.log(data);
+    setModalImage(URL.createObjectURL(data));
+  }
+
+  const viewDetails = async (row) => {
+    setModalRow(row);
+    await getImage(row.imageId);
+    setDetailsOpen(true);
+    console.log(row);
+  };
 
   const handleModalOpen = (row) => {
     setModalRow(row);
@@ -181,6 +194,7 @@ export default function EnhancedTable(props) {
     }
   };
   const handleDisposeClose = () => setDisposeOpen(false);
+  const handleDetailsClose = () => setDetailsOpen(false);
 
   return (
     <Box sx={{ width: "90%" }}>
@@ -205,6 +219,11 @@ export default function EnhancedTable(props) {
         disposeOpen={disposeOpen}
         disposeClose={handleDisposeClose}
         disposeProduct={props.disposeProduct}
+        row={modalRow}
+      />
+      <DetailsPage
+        detailsOpen={detailsOpen}
+        detailsClose={handleDetailsClose}
         row={modalRow}
       />
 
@@ -278,9 +297,7 @@ export default function EnhancedTable(props) {
                     <TableCell align="center">
                       {idx + 1 + props.rowsPerPage * props.page}
                     </TableCell>
-                    <TableCell align="center">{row.imageId}</TableCell>
                     <TableCell align="center">{row.fruitType}</TableCell>
-                    <TableCell align="center">{row.uploadTime}</TableCell>
                     <TableCell align="center">{row.humidity}</TableCell>
                     <TableCell align="center">{row.temperature}</TableCell>
                     <TableCell align="center">{row.purchaseDate}</TableCell>
@@ -291,7 +308,7 @@ export default function EnhancedTable(props) {
                     <TableCell align="left">
                       <Button
                         variant="outlined"
-                        onClick={() => viewDetails(row.seq)}
+                        onClick={() => viewDetails(row)}
                       >
                         View
                       </Button>
