@@ -34,11 +34,14 @@ const Profile = () => {
             'Content-Type': 'application/json',
           },
         })
+        console.log(response)
         if (response.ok) {
           const data = await response.json()
           setEmail(data.email)
           setRemarks(data.remarks)
-          setDaysNotify(data.alert_day)
+          setDaysNotify(data.default_days)
+
+          //setImage(`data:image/png;base64,${data.picture}`)
         } else {
           console.error('Failed to fetch profile data')
         }
