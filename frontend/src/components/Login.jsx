@@ -1,5 +1,5 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
@@ -23,32 +23,33 @@ export default function Login(props) {
   const [showPassword, setShowPassword] = React.useState(false)
   const handleClickShowPassword = () => setShowPassword((show) => !show)
   const handleMouseDownPassword = (event) => {
-    event.preventDefault()
-  }
+    event.preventDefault();
+  };
 
   React.useEffect(() => {
     if (props.token) {
-      navigate('/history')
+      navigate("/history");
     }
-  }, [props.token])
+  }, [props.token]);
 
   const login = async () => {
+    console.log(email, password);
     try {
-      const response = await fetch('http://localhost:5005/login', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5005/login", {
+        method: "POST",
         body: JSON.stringify({
           email,
           password,
         }),
         headers: {
-          'Content-type': 'application/json',
+          "Content-type": "application/json",
         },
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.error) {
-        alert(data.error)
+        alert(data.error);
       } else if (data.access_token) {
         localStorage.setItem('token', data.access_token)
         // localStorage.setItem('email', email)
@@ -61,7 +62,7 @@ export default function Login(props) {
       setOpenSnackbar(true)
       setMessageSnackbar('email not exist or password not correct')
     }
-  }
+  };
 
   const Cancel = () => {
     navigate('/landpage')
@@ -74,32 +75,34 @@ export default function Login(props) {
       className="registerPage"
       style={{
         // border: '1px solid red',
-        display: 'flex',
-        height: '80vh',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'auto',
-      }}>
+        display: "flex",
+        height: "80vh",
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "auto",
+      }}
+    >
       <Box
         component="form"
         sx={{
-          '& > :not(style)': {
+          "& > :not(style)": {
             m: 1,
-            width: '90%',
-            maxWidth: '30rem',
+            width: "90%",
+            maxWidth: "30rem",
           },
         }}
         noValidate
         autoComplete="off"
         style={{
-          padding: '1rem',
-          width: '80%',
-          maxWidth: '30rem',
-          display: 'flex',
-          alignItems: 'center',
-          flexDirection: 'column',
-          backgroundColor: '#ffffff',
-        }}>
+          padding: "1rem",
+          width: "80%",
+          maxWidth: "30rem",
+          display: "flex",
+          alignItems: "center",
+          flexDirection: "column",
+          backgroundColor: "#ffffff",
+        }}
+      >
         <h2>Login</h2>
         <TextField
           id="email"
@@ -116,14 +119,15 @@ export default function Login(props) {
           <OutlinedInput
             id="outlined-adornment-password"
             data-testid="outlined-adornment-password"
-            type={showPassword ? 'text' : 'password'}
+            type={showPassword ? "text" : "password"}
             endAdornment={
               <InputAdornment position="end">
                 <IconButton
                   aria-label="toggle password visibility"
                   onClick={handleClickShowPassword}
                   onMouseDown={handleMouseDownPassword}
-                  edge="end">
+                  edge="end"
+                >
                   {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
@@ -155,5 +159,5 @@ export default function Login(props) {
         </Alert>
       </Snackbar>
     </div>
-  )
+  );
 }

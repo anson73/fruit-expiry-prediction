@@ -4,27 +4,14 @@ from sqlalchemy import text, desc
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
 from datetime import datetime, timedelta
-from datetime import datetime, timedelta
 import uuid
-import shutil
-import os
-from weather import get_temperature, get_humidity, get_current_date
+from weather import get_temperature, get_humidity
 import atexit
 from flask_apscheduler import APScheduler
+from flask_mailman import Mail, EmailMessage
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-# DEFAULT_PICTURE_PATH = 'Asset/Default.png'
-
-import base64
-image_data = "data:image/png;base64,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"
-directory = "Asset"
-DEFAULT_PICTURE_PATH = os.path.join(directory, "Default.png")
-image_data = image_data.split(",")[1]
-if not os.path.exists(directory):
-    os.makedirs(directory)
-
-with open(DEFAULT_PICTURE_PATH, 'wb') as file:
-    file.write(base64.b64decode(image_data))
+DEFAULT_PICTURE_PATH = 'Asset/Default.png'
 
 app = Flask(__name__)
 # Add databse
@@ -37,11 +24,21 @@ app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
 app.config['DEFAULT_ROLES_DISABLED'] = True
 app.config['SCHEDULER_API_ENABLED'] = True
+# Mail config
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'digitalhaven42@gmail.com' 
+app.config['MAIL_PASSWORD'] = 'zgrk rcew cjif cosb'     #TODO: remove key from acc and abstract
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+
 # Initalise the database, JWT token libray, CORS and Scheduler
 db = SQLAlchemy()
 guard = Praetorian()
 cors = CORS()
-scheduler = APScheduler() 
+scheduler = APScheduler()
+mail = Mail()
+
 # Create database model (add authentication session token)
 class users(db.Model):
     id = db.Column(db.String(100), primary_key = True)
@@ -49,6 +46,7 @@ class users(db.Model):
     email = db.Column(db.String(120), nullable = False, unique = True)
     password = db.Column(db.String(50), nullable = False)
     profile_picture = db.Column(db.LargeBinary, default = None)
+    default_days = db.Column(db.Integer) # default value for notifications
 
     @classmethod
     def lookup(cls, username):
@@ -107,7 +105,12 @@ with app.app_context():
 guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
-
+# Initalizes Background scheduler
+scheduler.init_app(app)
+scheduler.start()
+# Initalizer mailer
+mail.init_app(app)
+#HELPER FUNCTIONS --------------------------------------------------------------------------------------
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
     dbToken = token_blacklist.query.filter_by(token=token).one_or_none()
@@ -120,6 +123,9 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def Temp_formula(temp, humidity, prd):
+
+    return 0
 # SCHEDULED FUNCTIONS ----------------------------------------------------------------------------------
 @scheduler.task('interval', id='blacklist', hours = 2)
 def ClearBlacklist():
@@ -136,15 +142,26 @@ def ClearBlacklist():
 @scheduler.task('interval', id='Alert', hours = 6) # 6 hours
 def EmailAlert():
     with scheduler.app.app_context():
+        print(f"Scheduled Mailing Cycle Started")
+        counter = 0
         query = images.query.all()
         for image in query:
             if image.prediction:
-                if image.upload_date + timedelta(days=image.prediction) < datetime.now() + timedelta(days=image.notification_days):
+                if image.upload_date + timedelta(days=image.prediction) <= datetime.now() + timedelta(days=image.notification_days):
                     if image.notified is False:
                         image.notified = True
+                        counter += 1
                         db.session.commit()
                         email = users.query.filter_by(id = image.id).first().email
-                        print(f"To {email} {image.fruit} is expiring")
+                        msg = EmailMessage(
+                            "Expiry Alert",
+                            f"{image.fruit.title()} is about to expire in {((image.upload_date + timedelta(days=image.prediction)) - datetime.now()).days} days",
+                            "digitalhaven42@gmail.com",
+                            [f"{email}"]
+                        )
+                        msg.send()
+                        print(f"mailsent to {email}")
+        print(f"Scheduled Mailing Cycle Finished")
             
                 
     
@@ -191,7 +208,7 @@ def user_register():
     with open(DEFAULT_PICTURE_PATH, 'rb' ) as file:
         blobdata = file.read()
 
-    user = users(id=user_id, username=user_name, email=user_email, password=user_password, profile_picture=blobdata)
+    user = users(id=user_id, username=user_name, email=user_email, password=user_password, profile_picture=blobdata, default_days = 3)
     db.session.add(user)
     db.session.commit()
     
@@ -252,7 +269,7 @@ def view_profile():
         GET: Returns current user email
         POST: Returns new password(FOR TESTING)
     """
-
+    print(guard.read_token_from_header())
     # Checks if the user's token is blacklisted via logout
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
@@ -260,11 +277,10 @@ def view_profile():
     
     id = current_user_id()
 
+
     if request.method == 'GET':
         # Queries and returns profile data that should be autofilled
         user = users.query.get_or_404(id)
-        # print(user)
-        # print(user.profile_pictture)
         return {"email":user.email, "default_days": user.default_days}, 200
     else:
         # Retrieving request data
@@ -303,7 +319,7 @@ def view_profile():
 
 
 @app.route('/logout', methods=['POST'])
-
+@auth_required
 def user_logout():
     """
     Route for user logout
@@ -374,7 +390,8 @@ def add_picture():
     id = current_user_id()
 
     file = request.files["file"]
-    user = users.query.filter_by(id=id)
+    user = users.query.filter_by(id=id).first()
+    user.profile_picture = None
     user.profile_picture = file.read()
     db.session.commit()
 
@@ -404,8 +421,12 @@ def add_content():
     # Retrieve data from request
     file = request.files["file"]
     fruit_type = request.form.get("fruittype")
-    location = request.form.get("location")
-    refrigerated = bool(request.form.get("refrigerated"))
+    latitude = request.form.get("latitude")
+    longitude = request.form.get("longitude")
+    purchase_date = request.form.get("purchaseDate")
+    refrigerated = False
+    if request.form.get("refrigerated") == 'true':
+        refrigerated = True
     
     # Checks if the file exists
     if file.filename == "":
@@ -429,23 +450,27 @@ def add_content():
         temperature = 3
         humidity = 40
     else:
-        temperature = get_temperature(location.lower())
-        humidity = get_humidity(location.lower())
+        temperature = get_temperature(latitude, longitude)
+        humidity = get_humidity(latitude, longitude)
+
+    user = users.query.filter_by(id= current_user_id()).first()
+
 
 
     predicted_expiry = None # Create a thread to call the AI engine while the rest of the data gets sent to db
-
+    print(purchase_date)
     # Add image metadata to database
     image = images(pid = image_id,
     id = current_user_id(), 
     prediction = None,
     feedback = None,
     upload_date = datetime.now(),
-    purchase_date = None,
+    purchase_date = datetime.strptime(purchase_date, '%Y-%m-%d').date(),
     consume_date = None,
     fruit = fruit_type.lower(),
     temperature = temperature,
     humidity =  humidity,
+    notification_days = user.default_days,
     consumed = False,
     data = file.read())
 
@@ -457,16 +482,19 @@ def add_content():
 
 
 @app.route('/history', methods=['GET'])
+@auth_required
 def get_user_records():
     """
+    # Example: /history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc
     Route to get all images/videos posted by the user
     return: List of Dictionaries
     """
-    # Previous Example: /history?filter=unhide&page=1&size=5&sort=temperature&order=asc
-    # Updated Example: /history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
+
     query = request.args.to_dict(flat=False)
 
-    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
+    uid = current_user_id() # Get User ID
     if query["consumed"][0] == "hide": 
         filters = images.query.filter_by(id=uid, consumed=False)
     else:
@@ -665,15 +693,17 @@ def delete():
     return "Image Deleted", 200
 
 @app.route('/history/alert', methods=['GET'])
+@auth_required
 def alert():
     """
+    # Example usage: /history/alert
     Route to get nearly expired products from database for history page popup
     return: 200 for success, 404 if imageid not found
     """
+    if isTokenInBlacklist(guard.read_token_from_header()):
+        return "This user is logged out", 401
 
-    # Example usage: /history/alert
-
-    uid = "e8a6c043-aa64-4a25-8d2b-7881d7b4e5a9" # User id hardcoded.
+    uid = current_user_id() # Get User ID
 
     # Get all not consumed images
     non_consumed = images.query.filter_by(id=uid, consumed=False, disposed=False)
@@ -681,6 +711,8 @@ def alert():
     counter = 1
     result = []
     for image in non_consumed.all():
+        if not image.prediction: continue
+
         # Convert prediction(integer days) to a date
         prediction = image.upload_date + timedelta(days=image.prediction)
 
@@ -705,7 +737,8 @@ def alert():
 
 @app.route('/image', methods=['GET'])
 def get_image():
-    image = images.query.filter_by(pid=1219339313).first()
+    image_id = int(request.args.get('imageid'))
+    image = images.query.filter_by(pid=image_id).first()
     return image.data
 
 @app.route('/history', methods=['POST'])

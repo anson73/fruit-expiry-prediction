@@ -32,14 +32,14 @@ export default function DisposalPage(props) {
         <h2>Dispose this product</h2>
         <Typography
           style={{
-            width: "90%",
+            width: "100%",
           }}
         >
           Please input the date that you have disposed this product.
         </Typography>
         <Typography
           style={{
-            width: "90%",
+            width: "100%",
           }}
         >
           Fruit Type: {props.row.fruitType}
@@ -51,6 +51,9 @@ export default function DisposalPage(props) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DesktopDatePicker
             label="Disposal Date"
+            slotProps={{
+              textField: { fullWidth: true },
+            }}
             onChange={(newValue) => {
               const currentDate = dayjs();
               const dayDifference = currentDate.diff(newValue, "ms");
@@ -64,7 +67,7 @@ export default function DisposalPage(props) {
         {disableSubmit ? (
           <Typography
             style={{
-              width: "90%",
+              width: "100%",
               color: "red",
             }}
           >
@@ -81,7 +84,7 @@ export default function DisposalPage(props) {
             props.disposeClose();
           }}
           style={{
-            width: "90%",
+            width: "100%",
           }}
         >
           Submit
@@ -90,7 +93,7 @@ export default function DisposalPage(props) {
           variant="outlined"
           onClick={props.disposeClose}
           style={{
-            width: "90%",
+            width: "100%",
           }}
         >
           Cancel
