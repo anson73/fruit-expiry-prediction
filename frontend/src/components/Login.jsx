@@ -1,24 +1,27 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import OutlinedInput from "@mui/material/OutlinedInput";
-import InputLabel from "@mui/material/InputLabel";
-import InputAdornment from "@mui/material/InputAdornment";
-import FormControl from "@mui/material/FormControl";
-import TextField from "@mui/material/TextField";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import Button from "@mui/material/Button";
+import Box from '@mui/material/Box'
+import IconButton from '@mui/material/IconButton'
+import OutlinedInput from '@mui/material/OutlinedInput'
+import InputLabel from '@mui/material/InputLabel'
+import InputAdornment from '@mui/material/InputAdornment'
+import FormControl from '@mui/material/FormControl'
+import TextField from '@mui/material/TextField'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import Button from '@mui/material/Button'
+import Snackbar from '@mui/material/Snackbar'
+import Alert from '@mui/material/Alert'
 
 export default function Login(props) {
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const navigate = useNavigate();
-
-  const [showPassword, setShowPassword] = React.useState(false);
-  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const [email, setEmail] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const navigate = useNavigate()
+  const [openSnackbar, setOpenSnackbar] = React.useState(false)
+  const [messageSnackbar, setMessageSnackbar] = React.useState('')
+  const [showPassword, setShowPassword] = React.useState(false)
+  const handleClickShowPassword = () => setShowPassword((show) => !show)
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
@@ -48,21 +51,25 @@ export default function Login(props) {
       if (data.error) {
         alert(data.error);
       } else if (data.access_token) {
-        console.log(data);
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("email", email);
-        props.setToken(data.access_token);
-        navigate("/history");
+        localStorage.setItem('token', data.access_token)
+        // localStorage.setItem('email', email)
+        props.setToken(data.access_token)
+        // navigate('/history')
       }
     } catch (error) {
-      console.error("Login error:", error);
+      // status code -> 401 -> input -> password
+      // 403 -> email not exist
+      setOpenSnackbar(true)
+      setMessageSnackbar('email not exist or password not correct')
     }
   };
 
   const Cancel = () => {
-    navigate("/landpage");
-  };
-
+    navigate('/landpage')
+  }
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false)
+  }
   return (
     <div
       className="registerPage"
@@ -138,6 +145,19 @@ export default function Login(props) {
           Cancel
         </Button>
       </Box>
+      <Snackbar
+        open={openSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="error"
+          variant="filled"
+          sx={{ width: '100%' }}>
+          {messageSnackbar}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

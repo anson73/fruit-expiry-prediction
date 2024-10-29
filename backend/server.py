@@ -166,8 +166,6 @@ def EmailAlert():
                 
     
 
-
-
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
 def user_register():
@@ -190,14 +188,14 @@ def user_register():
 
 
     # Check if inputted passwords match
-
+   
     if user_password != user_password_confirmation:
-        return "Passwords do not match", 400
+        return jsonify("Passwords do not match"), 400
 
     # Check if the email is already in the database
     email_query = users.query.filter_by(email=user_email).first()
     if email_query is not None:
-        return "Email is already registered", 409
+        return jsonify("Email is already registered"), 409
 
     # Check if the id is already in the database
     id_query = users.query.filter_by(id=user_id).first()
@@ -269,7 +267,7 @@ def view_profile():
         GET: Returns current user email
         POST: Returns new password(FOR TESTING)
     """
-
+    print(guard.read_token_from_header())
     # Checks if the user's token is blacklisted via logout
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
@@ -292,6 +290,8 @@ def view_profile():
 
         return_string = ""
         user = users.query.get_or_404(id)
+        print(user.password)
+        print(user_password)
 
         # Checks if password given matches password in DB
         if user.password != user_password:
@@ -315,7 +315,7 @@ def view_profile():
         if return_string == "":
             return_string = "Nothing new"
 
-        return return_string,200
+        return jsonify(return_string),200
 
 
 @app.route('/logout', methods=['POST'])
