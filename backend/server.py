@@ -294,8 +294,8 @@ def view_profile():
         user = users.query.get_or_404(id)
 
         # Checks if password given matches password in DB
-        if user.password != user_password:
-            return "Passwords do not match", 401
+        # if user.password != user_password:
+        #     return "Passwords do not match", 401
 
         # Checks if new passwords are not empty and match before changing the users password in DB
         if new_password is not None and new_password_confirmation is not None:
