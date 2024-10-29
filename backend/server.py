@@ -3,12 +3,13 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text, desc
 from flask_praetorian import Praetorian, auth_required, current_user_id
 from flask_cors import CORS
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import uuid
 from weather import get_temperature, get_humidity
 import atexit
 from flask_apscheduler import APScheduler
 from flask_mailman import Mail, EmailMessage
+import requests
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 DEFAULT_PICTURE_PATH = 'Asset/Default.png'
@@ -455,14 +456,24 @@ def add_content():
 
     user = users.query.filter_by(id= current_user_id()).first()
 
+    # Access AI server to get prediction
+    url = "http://127.0.0.1:8000/predict"
+    response = requests.post(url=url, files={'file': file})
+    predicted_expiry = response.json()["prediction"]
 
+    if predicted_expiry == "":
+        return "No fruit detected in image!", 406
+    
+    # Process prediction result (convert to integer and get average)
+    day_range = list(map(int, predicted_expiry.split("-")))
+    avg = round(sum(day_range) / len(day_range))
+    prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y") # Expiry Date
 
-    predicted_expiry = None # Create a thread to call the AI engine while the rest of the data gets sent to db
     print(purchase_date)
     # Add image metadata to database
     image = images(pid = image_id,
     id = current_user_id(), 
-    prediction = None,
+    prediction = avg,
     feedback = None,
     upload_date = datetime.now(),
     purchase_date = datetime.strptime(purchase_date, '%Y-%m-%d').date(),
@@ -477,7 +488,7 @@ def add_content():
     db.session.add(image)
     db.session.commit()
 
-    return f"Uploaded {file.filename}",200
+    return f"Expiry is {avg} days from now, which is {prediction}", 200
 
 
 
