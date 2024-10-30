@@ -4,7 +4,7 @@ from PIL import Image
 import torchvision.transforms.functional as TF
 
 DETECTION_CONFIDENCE_THRESHOLD = 0.5
-detector = YOLO("models/sprint1_detection_model.pt")
+detector = YOLO("app/models/sprint1_detection_model.pt")
 
 def detect_fruit(image: Image) -> List[Tuple[Image.Image, int]]:
     results = detector(image)
