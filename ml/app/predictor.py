@@ -114,7 +114,10 @@ def predict_shelf_life(
 ) -> Dict[str, str | float]:
     # Transform the image
     img_tensor = transform(image).unsqueeze(0)
-    model.to(device)
+
+    img_tensor = img_tensor.to(device)
+    model = model.to(device)
+
     model.eval()
 
     # Run prediction without gradient tracking
