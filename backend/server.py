@@ -455,6 +455,7 @@ def add_content():
         humidity = get_humidity(latitude, longitude)
 
     user = users.query.filter_by(id= current_user_id()).first()
+    file = file.read() # Save binary to a variable so it can be used twice. 
 
     # Access AI server to get prediction
     url = "http://127.0.0.1:8000/predict"
