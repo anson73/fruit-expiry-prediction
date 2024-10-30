@@ -459,9 +459,9 @@ def add_content():
     # Access AI server to get prediction
     url = "http://127.0.0.1:8000/predict"
     response = requests.post(url=url, files={'file': file})
-    predicted_expiry = response.json()["prediction"]
-
-    if predicted_expiry == "":
+    try:
+        predicted_expiry = response.json()["results"][0]["prediction"].split(" ")[0]
+    except:
         return "No fruit detected in image!", 406
     
     # Process prediction result (convert to integer and get average)
