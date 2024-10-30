@@ -10,9 +10,14 @@ import atexit
 from flask_apscheduler import APScheduler
 from flask_mailman import Mail, EmailMessage
 import requests
+import math
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 DEFAULT_PICTURE_PATH = 'Asset/Default.png'
+OPT_RH = 93
+OPT_TEMP = 3
+TEMP_SENS = 0.1
+RH_SENS = 0.02
 
 app = Flask(__name__)
 # Add databse
@@ -124,9 +129,13 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def Temp_formula(temp, humidity, prd):
+def ShelfLifeFormula(temp, humidity, curShelfLife):
 
-    return 0
+    return curShelfLife*math.exp(-TEMP_SENS*abs(temp-OPT_TEMP)-RH_SENS*abs(humidity - OPT_RH))
+
+def FeedbackFormula():
+
+    return
 # SCHEDULED FUNCTIONS ----------------------------------------------------------------------------------
 @scheduler.task('interval', id='blacklist', hours = 2)
 def ClearBlacklist():
