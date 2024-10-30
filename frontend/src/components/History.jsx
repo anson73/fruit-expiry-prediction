@@ -32,7 +32,7 @@ const History = (props) => {
       let hideDisposedVariable = "unhide";
       hideDisposed
         ? (hideDisposedVariable = "hide")
-        : (hideConsumedVariable = "unhide");
+        : (hideDisposedVariable = "unhide");
       const response = await fetch(
         `http://localhost:5005/history?consumed=${hideConsumedVariable}&disposed=${hideDisposedVariable}&page=${
           page + 1
