@@ -484,7 +484,7 @@ def add_content():
     humidity =  humidity,
     notification_days = user.default_days,
     consumed = False,
-    data = file.read())
+    data = file)
 
     db.session.add(image)
     db.session.commit()
