@@ -10,8 +10,8 @@ strawberry_decoder = {0:'expired',1:'1-2 days',2:'3-4 days',3:'5-7 days', 4:'8-1
 mango_decoder = {0:'expired', 1:'1-2 days', 2:'3-6 days', 3:'7-10 days'}
 orange_decoder = {0:'expired', 1:'0-1 days', 2:'2-5 days', 3:'6-9 days', 4:'10-14 days' }
 
-apple_encoder = {'expired': 0, '1-5': 1, '6-10 days': 2, '11-15 days': 3, '16-20 days': 4}
-banana_encoder = {'expired': 0, '1-2 days': 1, '3-4 days': 2, '5-7 days': 3, '8-10 days': 4}
+apple_encoder = {'expired': 0, '1-5': 1, '6-10': 2, '11-15': 3, '16-20': 4}
+banana_encoder = {'expired': 0, '1-2': 1, '3-4': 2, '5-7': 3, '8-10': 4}
 strawberry_encoder = {'expired': 0, '1-2 days': 1, '3-4 days': 2, '5-7 days': 3, '8-10 days': 4}
 mango_encoder = {'expired': 0, '1-2 days': 1, '3-6 days': 2, '7-10 days': 3}
 orange_encoder = {'expired': 0, '0-1 days': 1, '2-5 days': 2, '6-9 days': 3, '10-14 days': 4}
@@ -66,7 +66,7 @@ def load_model(fruit_type:str, device:torch.device) -> nn.Module:
     model = create_resnet50_model(num_classes=len(decoder))
     model = add_cbam_into_resnet_bottlenecks(model, [1,2,3,4])
     model.load_state_dict(
-        torch.load(model_path, map_location=device)
+        torch.load(model_path, map_location=device, weights_only=True)
     )
     model.to(device)
     model.eval()  # Set the model to evaluation mode
