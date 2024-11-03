@@ -15,7 +15,7 @@ describe('<Login />', () => {
     cy.get('#cancelButton').should('be.visible')
   })
 
-  it('wrong email & password', () => {
+  it('wrong email', () => {
     cy.get('#email').type('wrong@email.com')
     cy.get('#outlined-adornment-password').type('wrongPassword')
 
@@ -24,7 +24,7 @@ describe('<Login />', () => {
     cy.contains('email not exist or password not correct').should('be.visible')
   })
 
-  it('wrong email & password', () => {
+  it('wrong password', () => {
     cy.get('#email').type('z56@email.com')
     cy.get('#outlined-adornment-password').type('wrongPassword')
 

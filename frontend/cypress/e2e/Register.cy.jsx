@@ -17,7 +17,7 @@ describe('<Register />', () => {
     cy.get('#outlined-adornment-password-confirmation').should('be.visible')
   })
 
-  it('different password setting', () => {
+  it('different password setting check', () => {
     cy.get('#outlined-adornment-password').type('123')
     cy.get('#outlined-adornment-password-confirmation').type('345')
     cy.contains('The Password does not match! Please double check!').should(
@@ -38,7 +38,7 @@ describe('<Register />', () => {
     cy.get('#submitButton').click()
   })
 
-  it('try to enter valid information', () => {
+  it('email already exist', () => {
     cy.get('#email').type('z56@gmail.com')
     cy.get('#userName').type('Oswald')
     cy.get('#outlined-adornment-password').type('123')
