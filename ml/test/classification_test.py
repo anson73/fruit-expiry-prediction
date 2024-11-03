@@ -4,8 +4,9 @@ from PIL import Image
 import torch
 from torch.utils.data import DataLoader
 from torch import nn
-from app.models import get_encoder, load_model, resnet50_transform
 import pytest
+from sklearn.metrics import top_k_accuracy_score, mean_absolute_error
+from app.models import get_encoder, load_model, resnet50_transform
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.gif')
@@ -18,7 +19,6 @@ class Dataset(torch.utils.data.Dataset):
         self.dataset_path = dataset_path
         self.encoder = encoder
         self.transform = transform
-        
         self.dataset: List[Tuple[str, str]] = [] # list of pairs, each pair contains (image path, label name)
 
         for folder in os.listdir(dataset_path):
@@ -42,7 +42,7 @@ class Dataset(torch.utils.data.Dataset):
 
 
 
-def evaluate_model(model:nn.Module, test_loader,threshold:float, margin:float = 0.03):
+def evaluate_model(model:nn.Module, test_loader):
     """
     Evaluates the model's performance on a test dataset using accuracy and loss.
 
@@ -65,38 +65,50 @@ def evaluate_model(model:nn.Module, test_loader,threshold:float, margin:float = 
     AssertionError:
         If the model accuracy falls below the specified margin_accuracy.
     """
-    loss_fn = nn.CrossEntropyLoss()
     correct_pred = 0
     total = len(test_loader)
-    test_loss = 0
+    all_logits = []
+    all_outputs = []
+    all_preds = []
     with torch.no_grad():
         for inputs, outputs in test_loader:
             inputs, outputs = inputs.to(device), outputs.to(device)
 
             # Get model predictions
-            preds = model(inputs)
-            pred_indicies = torch.argmax(preds, dim=1)  # Get indices of the predictions
+            logits = model(inputs)
+            preds = torch.argmax(logits, dim=1)  # Get indices of the predictions
+            all_preds.extend(preds)
+            all_logits.extend(logits.cpu().numpy())
+            all_outputs.extend(outputs.cpu().numpy())
 
             # Calculate metrics
             total += len(outputs)
-            correct_pred += (pred_indicies == outputs).sum().item()
-            loss = loss_fn(preds, outputs)
-            test_loss += loss.item()
+            correct_pred += (preds == outputs).sum().item()
 
     # Calculate accuracy
     accuracy = 100 * correct_pred / total
-    print(f"Test Loss: {test_loss / len(test_loader):.4f}, Accuracy: {accuracy:.2f}%")
+    top_2_accuracy = top_k_accuracy_score(all_outputs, all_logits, k=2) * 100
+    mae = mean_absolute_error(all_outputs, all_preds)
+    print(f"Test Loss: {mae:.4f}, Accuracy: {accuracy:.2f}%, Top 2 accuracy: {top_2_accuracy:.2f}%")
 
-    assert accuracy >= (threshold - margin), (
-        f"Model accuracy {accuracy:.2f}% is below the threshold of {(threshold-margin)* 100}%"
-    )
+    return accuracy, top_2_accuracy, mae
 
-@pytest.mark.parametrize("fruit_type, dataset_path,threshold", [
-    ("banana", "test/dataset/banana",0.8),
+@pytest.mark.parametrize("fruit_type, dataset_path,accuracy_threshold, top_2_accuracy_threshold, mae_threshold", [
+    ("banana", "test/dataset/banana",0.8, 0.97,0.2),
  ])
-def test_models(fruit_type:str,dataset_path:str, threshold:float):
+def test_models(fruit_type:str,dataset_path:str, accuracy_threshold:float,top_2_accuracy_threshold:float,mae_threshold:float):
     model = load_model(fruit_type,device)
     encoder = get_encoder(fruit_type)
     dataset = Dataset(dataset_path,encoder, resnet50_transform)
     loader = DataLoader(dataset, batch_size=32)
-    evaluate_model(model, loader,threshold)
+    accuracy, top_2_accuracy,mae = evaluate_model(model, loader)
+
+    assert accuracy >= 100*(accuracy_threshold- 0.03), (
+            f"Model accuracy {accuracy:.2f}% is below the threshold of {(accuracy_threshold- 0.03)* 100}%"
+    )
+    assert top_2_accuracy >= 100*(top_2_accuracy_threshold - 0.01), (
+            f"Model accuracy {top_2_accuracy:.2f}% is below the threshold of {(top_2_accuracy_threshold- 0.01)* 100}%"
+    )
+    assert mae <= mae_threshold, (
+            f"mean squared error of {mae} is larger than threshold of {mae_threshold}"
+    )
