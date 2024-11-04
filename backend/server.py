@@ -287,7 +287,9 @@ def view_profile():
 
     if request.method == 'GET':
         # Queries and returns profile data that should be autofilled
-        user = users.query.get_or_404(id)
+        user = users.query.filter_by(id=id).first()
+        if user is None:
+                return "User not found", 404
         return {"email":user.email, "default_days": user.default_days}, 200
     else:
         # Retrieving request data
@@ -298,7 +300,9 @@ def view_profile():
         notification_days = profile_input.get("defaultdays")
 
         return_string = ""
-        user = users.query.get_or_404(id)
+        user = users.query.filter_by(id=id).first()
+        if user is None:
+                return "User not found", 404
         print(user.password)
         print(user_password)
 
