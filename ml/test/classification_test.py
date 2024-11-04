@@ -22,11 +22,13 @@ class Dataset(torch.utils.data.Dataset):
         self.dataset: List[Tuple[str, str]] = [] # list of pairs, each pair contains (image path, label name)
 
         for folder in os.listdir(dataset_path):
-            folder_path = os.path.join(dataset_path, folder)
-            images = os.listdir(folder_path)
-            for image in images:
-                if image.endswith(SUPPORTED_EXTENSIONS):
-                    self.dataset.append((os.path.join(folder_path,image),folder))
+            # the if statement is to deal with hidden files
+            if not folder.startswith("."): 
+                folder_path = os.path.join(dataset_path, folder)
+                images = os.listdir(folder_path)
+                for image in images:
+                    if image.endswith(SUPPORTED_EXTENSIONS):
+                        self.dataset.append((os.path.join(folder_path,image),folder))
 
     def __len__(self):
         return len(self.dataset)
@@ -96,7 +98,8 @@ def evaluate_model(model:nn.Module, test_loader):
 @pytest.mark.parametrize("fruit_type, dataset_path,accuracy_threshold, top_2_accuracy_threshold, mae_threshold", [
     ("banana", "test/dataset/banana",0.8, 0.97,0.2),
     ("apple", "test/dataset/apple", 0.8,0.95,0.2),
-    ("orange", "test/dataset/orange", 0.8,0.98,0.16)
+    ("orange", "test/dataset/orange", 0.85,0.98,0.16),
+    ("mango", "test/dataset/mango", 0.92,0.98,0.16)
  ])
 def test_models(fruit_type:str,dataset_path:str, accuracy_threshold:float,top_2_accuracy_threshold:float,mae_threshold:float):
     model = load_model(fruit_type,device)
