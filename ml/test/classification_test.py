@@ -95,12 +95,14 @@ def evaluate_model(model:nn.Module, test_loader):
 
 @pytest.mark.parametrize("fruit_type, dataset_path,accuracy_threshold, top_2_accuracy_threshold, mae_threshold", [
     ("banana", "test/dataset/banana",0.8, 0.97,0.2),
+    ("apple", "test/dataset/apple", 0.8,0.95,0.2),
  ])
 def test_models(fruit_type:str,dataset_path:str, accuracy_threshold:float,top_2_accuracy_threshold:float,mae_threshold:float):
     model = load_model(fruit_type,device)
     encoder = get_encoder(fruit_type)
     dataset = Dataset(dataset_path,encoder, resnet50_transform)
     loader = DataLoader(dataset, batch_size=32)
+    print(f'Testing {fruit_type}')
     accuracy, top_2_accuracy,mae = evaluate_model(model, loader)
 
     assert accuracy >= 100*(accuracy_threshold- 0.03), (

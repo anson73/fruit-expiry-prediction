@@ -4,7 +4,7 @@ from torchvision import models, transforms
 from app.cbam import add_cbam_into_resnet_bottlenecks
 
 
-apple_decoder = {0:'expired',1:'1-5',2:'6-10 days', 3:'11-15 days', 4:'16-20 days'}
+apple_decoder = {0:'expired',1:'1-5 days',2:'6-10 days', 3:'11-15 days', 4:'16-20 days'}
 banana_decoder = {0:'expired',1:'1-2 days',2:'3-4 days',3:'5-7 days', 4:'8-10 days'}
 strawberry_decoder = {0:'expired',1:'1-2 days',2:'3-4 days',3:'5-7 days', 4:'8-10 days'}
 mango_decoder = {0:'expired', 1:'1-2 days', 2:'3-6 days', 3:'7-10 days'}
@@ -12,9 +12,9 @@ orange_decoder = {0:'expired', 1:'0-1 days', 2:'2-5 days', 3:'6-9 days', 4:'10-1
 
 apple_encoder = {'expired': 0, '1-5': 1, '6-10': 2, '11-15': 3, '16-20': 4}
 banana_encoder = {'expired': 0, '1-2': 1, '3-4': 2, '5-7': 3, '8-10': 4}
-strawberry_encoder = {'expired': 0, '1-2 days': 1, '3-4 days': 2, '5-7 days': 3, '8-10 days': 4}
-mango_encoder = {'expired': 0, '1-2 days': 1, '3-6 days': 2, '7-10 days': 3}
-orange_encoder = {'expired': 0, '0-1 days': 1, '2-5 days': 2, '6-9 days': 3, '10-14 days': 4}
+strawberry_encoder = {'expired': 0, '1-2': 1, '3-4': 2, '5-7': 3, '8-10': 4}
+mango_encoder = {'expired': 0, '1-2': 1, '3-6': 2, '7-10': 3}
+orange_encoder = {'expired': 0, '0-1': 1, '2-5': 2, '6-9': 3, '10-14': 4}
 
 model_info = {
     "apple": {"path": "app/models/apple_model.pth", "decoder": apple_decoder, "encoder": apple_encoder},
