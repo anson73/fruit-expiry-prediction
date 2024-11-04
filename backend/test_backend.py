@@ -3,16 +3,15 @@ import tempfile
 
 import pytest
 
-from server import app, set_database_uri, create_db
+from server import app, db
 
 
 @pytest.fixture
 def client():
-    os.remove("instance/test.db")
     app.config.update({'TESTING': True})
-    set_database_uri('sqlite:///test.db')
-    create_db()
     with app.test_client() as client:
+        db.drop_all()
+        db.create_all()
         yield client
 
 def test_register(client):

@@ -17,8 +17,13 @@ DEFAULT_PICTURE_PATH = 'Asset/Default.png'
 app = Flask(__name__)
 # Add databse
 def set_database_uri(uri):
-    app.config['SQLALCHEMY_DATABASE_URI'] = uri
+    app.config.update({'SQLALCHEMY_DATABASE_URI': uri})
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+
+if __name__ == '__main__':
+    set_database_uri('sqlite:///core.db')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # add secret key TODO CHANGE THE KEY
 app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
@@ -101,10 +106,10 @@ class token_blacklist(db.Model):
 
 # create the database if it does not exist
 app.app_context().push()
-def create_db():
-    db.init_app(app)
-    with app.app_context():
-        db.create_all()
+
+db.init_app(app)
+with app.app_context():
+    db.create_all()
 # Initialize the flask-praetorian instance for the app
 guard.init_app(app, users)
 # Initializes CORS so that the api_tool can talk to the example app
@@ -775,7 +780,6 @@ def add_feedback():
 
 
 atexit.register(lambda: scheduler.shutdown(wait=False))
+
 if __name__ == '__main__':
-    set_database_uri('sqlite:///core.db')
     app.run(port=5005)
-    create_db()
