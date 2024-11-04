@@ -99,7 +99,8 @@ def evaluate_model(model:nn.Module, test_loader):
     ("banana", "test/dataset/banana",0.8, 0.97,0.2),
     ("apple", "test/dataset/apple", 0.8,0.95,0.2),
     ("orange", "test/dataset/orange", 0.85,0.98,0.16),
-    ("mango", "test/dataset/mango", 0.92,0.98,0.16)
+    ("mango", "test/dataset/mango", 0.92,0.98,0.16),
+    ("strawberry", "test/dataset/strawberry", 0.88,0.97,0.1)
  ])
 def test_models(fruit_type:str,dataset_path:str, accuracy_threshold:float,top_2_accuracy_threshold:float,mae_threshold:float):
     model = load_model(fruit_type,device)
