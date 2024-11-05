@@ -6,3 +6,4 @@ torchvision
 ultralytics
 python-multipart
 pytest
+scikit-learn

@@ -79,7 +79,7 @@ def evaluate_model(model:nn.Module, test_loader):
             # Get model predictions
             logits = model(inputs)
             preds = torch.argmax(logits, dim=1)  # Get indices of the predictions
-            all_preds.extend(preds)
+            all_preds.extend(preds.cpu().numpy())
             all_logits.extend(logits.cpu().numpy())
             all_outputs.extend(outputs.cpu().numpy())
 
