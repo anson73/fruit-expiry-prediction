@@ -205,3 +205,165 @@ def test_prediction(client):
     resp = client.post('/prediction',data={"fruittype":"Apple", "latitude":"33.8688", "longitude":"151.2093","purchaseDate":"2024-11-6", "file": (content / "apple-day.jpg").open("rb")} ,headers = {"Authorization": "Bearer " + token})
     assert resp.status_code == 200
     assert b'Expiry is 3 days from now, which is' in resp.data 
+
+def test_history(client):
+
+    resp = client.post('/register', json = {"email":"joe@gmail.com", "name":"joe", "password":"joejoe123", "passwordconfirmation": "joejoe123"})
+    assert resp.status_code == 201
+    assert resp.data is not None
+    token = json.loads(resp.data.decode('utf8').strip())["access_token"]
+
+    # Test empty history page. 
+    resp1 = client.get('/history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp1.status_code == 200
+    assert resp1.data == str.encode("[[],0]\n")
+
+    # Add multiple images to database using prediction page
+    resp2 = client.post('/prediction', headers = {"Authorization": "Bearer " + token}, 
+                        data = {"file": open('content/apple.JPG', 'rb'), "fruittype": "apple", "latitude": "0", "longitude": "0", "purchaseDate": "2024-05-10", "refrigerated": "true"})
+    assert resp2.status_code == 200
+    assert resp2.data is not None
+
+    resp3 = client.post('/prediction', headers = {"Authorization": "Bearer " + token}, 
+                        data = {"file": open('content/bananna.JPG', 'rb'), "fruittype": "bananna", "latitude": "0", "longitude": "0", "purchaseDate": "2024-05-10", "refrigerated": "true"})
+    assert resp3.status_code == 200
+    assert resp3.data is not None
+
+    resp4 = client.post('/prediction', headers = {"Authorization": "Bearer " + token}, 
+                        data = {"file": open('content/mango.JPG', 'rb'), "fruittype": "mango", "latitude": "0", "longitude": "0", "purchaseDate": "2024-05-10", "refrigerated": "true"})
+    assert resp4.status_code == 200
+    assert resp4.data is not None
+
+    resp5 = client.post('/prediction', headers = {"Authorization": "Bearer " + token}, 
+                        data = {"file": open('content/orange.JPG', 'rb'), "fruittype": "orange", "latitude": "0", "longitude": "0", "purchaseDate": "2024-05-10", "refrigerated": "true"})
+    assert resp5.status_code == 200
+    assert resp5.data is not None
+
+    resp6 = client.post('/prediction', headers = {"Authorization": "Bearer " + token}, 
+                        data = {"file": open('content/strawberry.JPG', 'rb'), "fruittype": "strawberry", "latitude": "0", "longitude": "0", "purchaseDate": "2024-05-10", "refrigerated": "true"})
+    assert resp6.status_code == 200
+    assert resp6.data is not None
+
+    # Get history with 5 fruits
+    resp7 = client.get('/history?consumed=unhide&disposed=unhide&page=1&size=10&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp7.status_code == 200
+    result = json.loads(resp7.data.decode())
+    assert result[0][0]["fruitType"] == "apple"
+    assert result[0][1]["fruitType"] == "bananna"
+    assert result[0][2]["fruitType"] == "mango"
+    assert result[0][3]["fruitType"] == "orange"
+    assert result[0][4]["fruitType"] == "strawberry"
+    assert result[1] == 5
+
+    # Get the image id for each of the images
+    appleid = result[0][0]["imageId"]
+    banannaid = result[0][1]["imageId"]
+    mangoid = result[0][2]["imageId"]
+    orangeid = result[0][3]["imageId"]
+    strawberryid = result[0][4]["imageId"]
+
+    # Test sorting by fruits, descending
+    resp8 = client.get('/history?consumed=unhide&disposed=unhide&page=1&size=10&sort=fruitType&order=desc', headers = {"Authorization": "Bearer " + token})
+    assert resp8.status_code == 200
+    result = json.loads(resp8.data.decode())
+    assert result[0][0]["fruitType"] == "strawberry"
+    assert result[0][1]["fruitType"] == "orange"
+    assert result[0][2]["fruitType"] == "mango"
+    assert result[0][3]["fruitType"] == "bananna"
+    assert result[0][4]["fruitType"] == "apple"
+    assert result[1] == 5
+
+    # Test using smaller page size
+    resp9 = client.get('/history?consumed=unhide&disposed=unhide&page=1&size=3&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp9.status_code == 200
+    result = json.loads(resp9.data.decode())
+    assert result[0][0]["fruitType"] == "apple"
+    assert result[0][1]["fruitType"] == "bananna"
+    assert result[0][2]["fruitType"] == "mango"
+    assert result[1] == 5
+    assert len(result[0]) == 3
+
+    # Test changing page numbers
+    resp10 = client.get('/history?consumed=unhide&disposed=unhide&page=2&size=3&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp10.status_code == 200
+    result = json.loads(resp10.data.decode())
+    assert result[0][0]["fruitType"] == "orange"
+    assert result[0][1]["fruitType"] == "strawberry"
+    assert result[1] == 5
+    assert len(result[0]) == 2
+
+    # Test viewing image
+    resp11 = client.get(f'/image?imageid={appleid}')
+    assert resp11.status_code == 200
+    appleimage = open('content/apple.JPG', 'rb')
+    assert resp11.data == appleimage.read()
+
+    # Test consuming
+    resp12 = client.post(f'/history/consume?imageid={appleid}&days=4')
+    assert resp12.status_code == 200
+    resp13 = client.get('/history?consumed=hide&disposed=unhide&page=1&size=10&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp13.status_code == 200
+    result = json.loads(resp13.data.decode())
+    assert result[1] == 4
+    assert len(result[0]) == 4
+
+    # Test unconsuming
+    resp14 = client.post(f'/history/unconsume?imageid={appleid}')
+    assert resp14.status_code == 200
+    resp15 = client.get('/history?consumed=hide&disposed=unhide&page=1&size=10&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp15.status_code == 200
+    result = json.loads(resp15.data.decode())
+    assert result[1] == 5
+    assert len(result[0]) == 5
+
+    # Test disposing
+    resp16 = client.post(f'/history/dispose?imageid={appleid}&days=4')
+    assert resp16.status_code == 200
+    resp17 = client.get('/history?consumed=unhide&disposed=hide&page=1&size=10&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp17.status_code == 200
+    result = json.loads(resp17.data.decode())
+    assert result[1] == 4
+    assert len(result[0]) == 4
+
+    # Test undisposing
+    resp18 = client.post(f'/history/undispose?imageid={appleid}')
+    assert resp18.status_code == 200
+    resp19 = client.get('/history?consumed=unhide&disposed=hide&page=1&size=10&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp19.status_code == 200
+    result = json.loads(resp19.data.decode())
+    assert result[1] == 5
+    assert len(result[0]) == 5
+
+    # Test changing notification days
+    resp20 = client.post(f'/history/notification?imageid={appleid}&days=10')
+    assert resp20.status_code == 200
+    resp21 = client.get('/history?consumed=unhide&disposed=unhide&page=1&size=10&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp21.status_code == 200
+    result = json.loads(resp21.data.decode())
+    assert result[1] == 5
+    assert result[0][0]["daysNotify"] == 10
+
+    # Test alert
+    resp22 = client.post(f'/history/notification?imageid={appleid}&days=100')
+    assert resp22.status_code == 200
+    resp23 = client.post(f'/history/notification?imageid={banannaid}&days=100')
+    assert resp23.status_code == 200
+    resp24 = client.post(f'/history/notification?imageid={orangeid}&days=100')
+    assert resp24.status_code == 200
+    resp25 = client.post(f'/history/notification?imageid={mangoid}&days=100')
+    assert resp25.status_code == 200
+    resp26 = client.post(f'/history/notification?imageid={strawberryid}&days=100')
+    assert resp26.status_code == 200
+
+    resp27 = client.get('/history/alert', headers = {"Authorization": "Bearer " + token})
+    assert resp27.status_code == 200
+    result = json.loads(resp27.data.decode())
+    assert len(result) == 5
+
+    # Test delete
+    resp28 = client.delete(f'/history/delete?imageid={appleid}')
+    assert resp28.status_code == 200
+    resp29 = client.get('/history?consumed=unhide&disposed=unhide&page=1&size=10&sort=fruitType&order=asc', headers = {"Authorization": "Bearer " + token})
+    assert resp29.status_code == 200
+    result = json.loads(resp29.data.decode())
+    assert result[1] == 4
