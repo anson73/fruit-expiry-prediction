@@ -1,6 +1,6 @@
 import pytest
 import json
-from app import app, db
+from server import app, db
 from pathlib import Path
 from datetime import datetime
 

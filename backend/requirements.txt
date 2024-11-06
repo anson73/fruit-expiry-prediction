@@ -6,4 +6,7 @@ pytz
 flask_sqlalchemy
 flask_cors
 flask_praetorian
-
+sqlalchemy
+flask_apscheduler
+flask_mailman
+pytest
