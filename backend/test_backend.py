@@ -1,6 +1,6 @@
 import pytest
 import json
-from server import app, db
+from app import app, db
 from pathlib import Path
 from datetime import datetime
 
@@ -87,7 +87,7 @@ def test_get_missing_profile(client):
 
     db.drop_all()
     db.create_all()
-    
+
     resp2 = client.get('/profile', headers = {"Authorization": "Bearer " + token})
     assert resp2.status_code == 404
     assert resp2.data == b'User not found'
@@ -129,7 +129,7 @@ def test_post_profile_change_password_orignal_password_incorrect(client):
     assert resp2.data == b'Passwords do not match'
     assert resp2.status_code == 401
 
-    
+
 def test_post_profile_change_password_new_password_mismatch(client):
 
     resp = client.post('/register', json = {"email":"a@gmail.com", "name":"b", "password":"c", "passwordconfirmation": "c"})
@@ -204,4 +204,4 @@ def test_prediction(client):
 
     resp = client.post('/prediction',data={"fruittype":"Apple", "latitude":"33.8688", "longitude":"151.2093","purchaseDate":"2024-11-6", "file": (content / "apple-day.jpg").open("rb")} ,headers = {"Authorization": "Bearer " + token})
     assert resp.status_code == 200
-    assert b'Expiry is 3 days from now, which is' in resp.data 
+    assert b'Expiry is 3 days from now, which is' in resp.data
