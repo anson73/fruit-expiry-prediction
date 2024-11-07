@@ -16,7 +16,14 @@ DEFAULT_PICTURE_PATH = 'Asset/Default.png'
 
 app = Flask(__name__)
 # Add databse
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
+def set_database_uri(uri):
+    app.config.update({'SQLALCHEMY_DATABASE_URI': uri})
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+
+if __name__ == '__main__':
+    set_database_uri('sqlite:///core.db')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # add secret key TODO CHANGE THE KEY
 app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
@@ -99,6 +106,7 @@ class token_blacklist(db.Model):
 
 # create the database if it does not exist
 app.app_context().push()
+
 db.init_app(app)
 with app.app_context():
     db.create_all()
@@ -188,8 +196,16 @@ def user_register():
     user_id = str(uuid.uuid4())
 
 
+    if user_email is None or user_email == "" :
+        return jsonify("Empty Email"), 400
+    
+    if user_name is None or user_name == "" :
+        return jsonify("Empty Name"), 400
+    
+    if user_password is None or user_password == "" :
+        return jsonify("Empty Password"), 400
     # Check if inputted passwords match
-   
+    
     if user_password != user_password_confirmation:
         return jsonify("Passwords do not match"), 400
 
@@ -279,7 +295,9 @@ def view_profile():
 
     if request.method == 'GET':
         # Queries and returns profile data that should be autofilled
-        user = users.query.get_or_404(id)
+        user = users.query.filter_by(id=id).first()
+        if user is None:
+                return "User not found", 404
         return {"email":user.email, "default_days": user.default_days}, 200
     else:
         # Retrieving request data
@@ -290,16 +308,14 @@ def view_profile():
         notification_days = profile_input.get("defaultdays")
 
         return_string = ""
-        user = users.query.get_or_404(id)
-        print(user.password)
-        print(user_password)
+        user = users.query.filter_by(id=id).first()
+        if user is None:
+                return "User not found", 404
 
-        # Checks if password given matches password in DB
-        if user.password != user_password:
-            return "Passwords do not match", 401
 
-        # Checks if new passwords are not empty and match before changing the users password in DB
-        if new_password is not None and new_password_confirmation is not None:
+        if new_password != "" and new_password_confirmation != "":
+            if user.password != user_password:
+                return "Passwords do not match", 401
             if new_password != new_password_confirmation:
                 return "new password does not match", 400
             user.password = new_password
@@ -458,17 +474,22 @@ def add_content():
     file = file.read() # Save binary to a variable so it can be used twice. 
 
     # Access AI server to get prediction
-    url = "http://127.0.0.1:8000/predict"
-    response = requests.post(url=url, files={'file': file})
-    try:
-        predicted_expiry = response.json()["results"][0]["prediction"].split(" ")[0]
-    except:
-        return "No fruit detected in image!", 406
+    if __name__ == '__main__':
+        url = "http://127.0.0.1:8000/predict"
+        response = requests.post(url=url, files={'file': file})
+        try:
+            predicted_expiry = response.json()["results"][0]["prediction"].split(" ")[0]
+        except:
+            return "No fruit detected in image!", 406
+        # Process prediction result (convert to integer and get average)
+        day_range = list(map(int, predicted_expiry.split("-")))
+        avg = round(sum(day_range) / len(day_range))
+        prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y") # Expiry Date
+    else:
+        # THIS IS SOLELY FOR UNIT TESTING PURPOSES
+        avg = 3
+        prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y")
     
-    # Process prediction result (convert to integer and get average)
-    day_range = list(map(int, predicted_expiry.split("-")))
-    avg = round(sum(day_range) / len(day_range))
-    prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y") # Expiry Date
 
     print(purchase_date)
     # Add image metadata to database
@@ -772,5 +793,6 @@ def add_feedback():
 
 
 atexit.register(lambda: scheduler.shutdown(wait=False))
+
 if __name__ == '__main__':
     app.run(port=5005)
