@@ -189,6 +189,7 @@ const Profile = () => {
           style={{ width: "15rem", height: "15rem" }}
         />
         <Button
+          id="AvatarBotton"
           variant="contained"
           component="label"
           fullWidth
@@ -211,6 +212,7 @@ const Profile = () => {
         <FormControl variant="outlined" required>
           <InputLabel>Password</InputLabel>
           <OutlinedInput
+            id="OldPassword"
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -235,6 +237,7 @@ const Profile = () => {
             type={showPassword ? "text" : "password"}
             value={newPassword || ""}
             onChange={(e) => setNewPassword(e.target.value)}
+            id="New_Password"
             endAdornment={
               <InputAdornment position="end">
                 <IconButton
@@ -256,6 +259,7 @@ const Profile = () => {
             type={showPassword ? "text" : "password"}
             value={newPasswordConfirmed || ""}
             onChange={(e) => setNewPasswordConfirmed(e.target.value)}
+            id="New_Password_Confirmation"
             endAdornment={
               <InputAdornment position="end">
                 <IconButton
@@ -281,10 +285,10 @@ const Profile = () => {
           onChange={(e) => setDaysNotify(e.target.value)}
         />
 
-        <Button variant="outlined" onClick={handleSubmit}>
+        <Button variant="outlined" onClick={handleSubmit} id="SubmitBotton">
           Submit
         </Button>
-        <Button variant="outlined" onClick={handleCancel}>
+        <Button variant="outlined" onClick={handleCancel} id="CancelBotton">
           Cancel
         </Button>
       </Box>
