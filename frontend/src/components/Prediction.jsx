@@ -1,18 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Grid,
-  Button,
-  Typography,
-  TextField,
-  TableContainer,
-  TableCell,
-  TableRow,
-  TableHead,
-  Paper,
-  TableBody,
-  Table,
-} from "@mui/material";
+import { Box, Grid, Button, Typography, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -86,7 +73,6 @@ const Prediction = () => {
               borderRadius: "10px",
               justifyContent: "center",
               alignItems: "center",
-              overflow: "hidden",
             }}
           >
             {image ? (
@@ -100,6 +86,7 @@ const Prediction = () => {
             variant="contained"
             component="label"
             fullWidth
+            id="imageUpload"
             startIcon={<CloudUploadIcon />}
             sx={{ marginTop: 1 }}
           >
@@ -110,17 +97,22 @@ const Prediction = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Fruit Type"
+            label="Product Label"
             variant="outlined"
+            id="fruitType"
             value={fruitType}
             onChange={(e) => setfruitType(e.target.value)}
             sx={{ marginBottom: 2 }}
           />
-          <FormControl fullWidth style={{ marginBottom: "0.8rem" }}>
+          <FormControl
+            id="refridgerationForm"
+            fullWidth
+            style={{ marginBottom: "0.8rem" }}
+          >
             <InputLabel id="demo-simple-select-label">Refrigeration</InputLabel>
             <Select
               labelId="demo-simple-select-label"
-              id="demo-simple-select"
+              id="Refrigeration"
               value={Refrigeration}
               label="Refrigeration"
               onChange={(e) => setRefrigeration(e.target.value)}
@@ -129,8 +121,10 @@ const Prediction = () => {
               <MenuItem value={false}>False</MenuItem>
             </Select>
           </FormControl>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <LocalizationProvider id="purchaseDate" dateAdapter={AdapterDayjs}>
             <DesktopDatePicker
+              label="Purchase Date"
+              id="purchaseDate"
               onChange={(newValue) => {
                 const currentDate = dayjs();
                 const dayDifference = currentDate.diff(newValue, "ms");
@@ -161,6 +155,7 @@ const Prediction = () => {
             variant="contained"
             color="secondary"
             fullWidth
+            id="predictButton"
             disabled={disableSubmit}
             onClick={handlePredict}
             style={{ marginTop: "0.8rem", marginBottom: "1rem" }}
@@ -172,16 +167,6 @@ const Prediction = () => {
           <Box sx={{ marginTop: 8 }}></Box>
         </Grid>
       </Grid>
-
-      {/* <Box justifyContent="space-around" display="flex" marginTop="4">
-        <Button variant="contained" color="primary">
-          Prediction
-        </Button>
-
-        <Button variant="contained" color="secondary">
-          History
-        </Button>
-      </Box> */}
     </Box>
   );
 };

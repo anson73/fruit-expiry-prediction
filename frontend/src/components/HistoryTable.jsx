@@ -33,7 +33,7 @@ function EnhancedTableHead(props) {
   const headCells = [
     {
       id: "fruitType",
-      label: "Fruit Type",
+      label: "Product Label",
     },
     {
       id: "purchaseDate",
