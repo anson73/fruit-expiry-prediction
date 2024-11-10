@@ -478,7 +478,11 @@ def add_content():
         url = "http://127.0.0.1:8000/predict"
         response = requests.post(url=url, files={'file': file})
         try:
-            predicted_expiry = response.json()["results"][0]["prediction"].split(" ")[0]
+            predicted_expiry = response.json()["results"][0]["prediction"]
+            if predicted_expiry == "expired":
+                return "Product is already expired!", 406
+            
+            predicted_expiry = predicted_expiry.split(" ")[0]
         except:
             return "No fruit detected in image!", 406
         # Process prediction result (convert to integer and get average)
