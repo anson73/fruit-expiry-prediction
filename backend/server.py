@@ -15,14 +15,8 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 DEFAULT_PICTURE_PATH = 'Asset/Default.png'
 
 app = Flask(__name__)
-# Add databse
-def set_database_uri(uri):
-    app.config.update({'SQLALCHEMY_DATABASE_URI': uri})
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-
-if __name__ == '__main__':
-    set_database_uri('sqlite:///core.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # add secret key TODO CHANGE THE KEY
@@ -119,6 +113,7 @@ scheduler.init_app(app)
 scheduler.start()
 # Initalizer mailer
 mail.init_app(app)
+
 #HELPER FUNCTIONS --------------------------------------------------------------------------------------
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
@@ -474,26 +469,20 @@ def add_content():
     file = file.read() # Save binary to a variable so it can be used twice. 
 
     # Access AI server to get prediction
-    if __name__ == '__main__':
-        url = "http://127.0.0.1:8000/predict"
-        response = requests.post(url=url, files={'file': file})
-        try:
-            predicted_expiry = response.json()["results"][0]["prediction"]
-            if predicted_expiry == "expired":
-                return "Product is already expired!", 406
+    url = "http://127.0.0.1:8000/predict"
+    response = requests.post(url=url, files={'file': file})
+    try:
+        predicted_expiry = response.json()["results"][0]["prediction"]
+        if predicted_expiry == "expired":
+            return "Product is already expired!", 406
             
-            predicted_expiry = predicted_expiry.split(" ")[0]
-        except:
-            return "No fruit detected in image!", 406
+        predicted_expiry = predicted_expiry.split(" ")[0]
+    except:
+        return "No fruit detected in image!", 406
         # Process prediction result (convert to integer and get average)
-        day_range = list(map(int, predicted_expiry.split("-")))
-        avg = round(sum(day_range) / len(day_range))
-        prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y") # Expiry Date
-    else:
-        # THIS IS SOLELY FOR UNIT TESTING PURPOSES
-        avg = 3
-        prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y")
-    
+    day_range = list(map(int, predicted_expiry.split("-")))
+    avg = round(sum(day_range) / len(day_range))
+    prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y") # Expiry Date
 
     print(purchase_date)
     # Add image metadata to database
