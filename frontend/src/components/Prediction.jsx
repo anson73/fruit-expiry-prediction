@@ -121,7 +121,7 @@ const Prediction = () => {
               <MenuItem value={false}>False</MenuItem>
             </Select>
           </FormControl>
-          <LocalizationProvider id="purchaseDate" dateAdapter={AdapterDayjs}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DesktopDatePicker
               label="Purchase Date"
               id="purchaseDate"
@@ -162,7 +162,7 @@ const Prediction = () => {
           >
             Predict
           </Button>
-          <Typography>Estimated Expiry: {prediction}</Typography>
+          <Typography id='prediction-result'>Estimated Expiry: {prediction}</Typography>
 
           <Box sx={{ marginTop: 8 }}></Box>
         </Grid>

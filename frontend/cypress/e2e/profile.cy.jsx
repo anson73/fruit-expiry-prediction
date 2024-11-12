@@ -89,4 +89,41 @@ describe('<profile testing />', () => {
       
     })
 
+    it('should display the user profile picture', () => {
+      cy.visit('http://localhost:3000/register')
+      cy.get('#email').type('78777034@gmail.com')
+      cy.get('#userName').type('Oswald')
+      cy.get('#outlined-adornment-password').type('8888')
+      cy.get('#outlined-adornment-password-confirmation').type('8888')
+      cy.contains('The Password does not match! Please double check!').should(
+          'not.exist'
+      )
+      cy.get('#submitButton').click()
+      cy.url().should('include', '/profile')
+      
+      cy.get('.MuiAvatar-img').as('profilePicture');
+      cy.get('@profilePicture').should('be.visible').and('have.prop', 'naturalWidth').and('be.greaterThan', 0);
+      cy.get('@profilePicture').should('have.attr', 'src').and('include', 'blob:http://localhost:3000/');
+  });
+
+
+  it('uploads a file', () => {
+    // Visit the file upload page
+    cy.visit('http://localhost:3000/login')
+    cy.get('#email').type('78777034@gmail.com')
+    cy.get('#outlined-adornment-password').type('8888')
+    cy.get('#login').click()
+    cy.url().should('include', '/history')
+    cy.get('#Profile').click()
+     
+    // Get the file input element and attach a file
+    const fileName = 'banana.jpg';
+    cy.get('.MuiButton-contained').click();
+    cy.get("input[type='file']").attachFile(fileName);
+    cy.get('.MuiAvatar-img')
+    .should('exist')
+    .and('have.attr', 'name')
+    .and('eq', 'banana.jpg');
+    });
+
   })
