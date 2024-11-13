@@ -29,7 +29,7 @@ app.config['SCHEDULER_API_ENABLED'] = True
 # Mail config
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
-app.config['MAIL_USERNAME'] = 'digitalhaven42@gmail.com' 
+app.config['MAIL_USERNAME'] = 'digitalhaven42@gmail.com'
 app.config['MAIL_PASSWORD'] = 'zgrk rcew cjif cosb'     #TODO: remove key from acc and abstract
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
@@ -61,7 +61,7 @@ class users(db.Model):
     @property
     def identity(self):
         return self.id
-    
+
     @property # Praetorian library requires roles for tokens even when roles are disabled in config
     def rolenames(self):
         return []
@@ -95,7 +95,7 @@ class token_blacklist(db.Model):
     def __repr__(self):
         return '<Token %r>' % self.token
 
-    
+
 
 
 # create the database if it does not exist
@@ -166,9 +166,9 @@ def EmailAlert():
                         msg.send()
                         print(f"mailsent to {email}")
         print(f"Scheduled Mailing Cycle Finished")
-            
-                
-    
+
+
+
 
 # USER FUNCTIONS ----------------------------------------------------------------------------------
 @app.route('/register', methods=['POST'])
@@ -193,14 +193,14 @@ def user_register():
 
     if user_email is None or user_email == "" :
         return jsonify("Empty Email"), 400
-    
+
     if user_name is None or user_name == "" :
         return jsonify("Empty Name"), 400
-    
+
     if user_password is None or user_password == "" :
         return jsonify("Empty Password"), 400
     # Check if inputted passwords match
-    
+
     if user_password != user_password_confirmation:
         return jsonify("Passwords do not match"), 400
 
@@ -221,7 +221,7 @@ def user_register():
     user = users(id=user_id, username=user_name, email=user_email, password=user_password, profile_picture=blobdata, default_days = 3)
     db.session.add(user)
     db.session.commit()
-    
+
     # Test
     all_users = users.query.all()
     for user in all_users:
@@ -240,7 +240,7 @@ def user_login():
 
     return: JWT token for authentication
     """
-    
+
     # Retrieving request data
     user_data = request.json
     user_email = user_data.get("email")
@@ -255,7 +255,7 @@ def user_login():
     if user is not None:
         ret = {'access_token': guard.encode_jwt_token(user)}
         return jsonify(ret), 200
-    
+
     return "Email or Password Incorrect", 401
 
 
@@ -268,14 +268,14 @@ def view_profile():
 
     Header:
         Requires token in header in format:
-        Authorization : Bearer <INSERT JWT TOKEN> 
+        Authorization : Bearer <INSERT JWT TOKEN>
 
      POST Args:
         password(string): Password of the user
         newpassword(string): New password of the user
         newpasswordconfirmation(string): Repeat of user's new password for confirmation
 
-    return: 
+    return:
         GET: Returns current user email
         POST: Returns new password(FOR TESTING)
     """
@@ -283,8 +283,8 @@ def view_profile():
     # Checks if the user's token is blacklisted via logout
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
-    
-    
+
+
     id = current_user_id()
 
 
@@ -354,7 +354,7 @@ def user_logout():
 
 
 # IMAGE/VIDEO FUNCTIONS ---------------------------------------------------------------------------
-@app.route('/profile/picture/view', methods=['GET']) 
+@app.route('/profile/picture/view', methods=['GET'])
 @auth_required
 def get_picture():
 
@@ -370,7 +370,7 @@ def get_picture():
 
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
-    
+
     id = current_user_id()
 
     # Queries and returns profile data that should be autofilled
@@ -378,7 +378,7 @@ def get_picture():
     return user.profile_picture
 
 
-@app.route('/profile/picture', methods=['POST']) 
+@app.route('/profile/picture', methods=['POST'])
 @auth_required
 def add_picture():
     """
@@ -397,8 +397,8 @@ def add_picture():
     # Checks if the user's token is blacklisted via logout
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
-    
-    
+
+
     id = current_user_id()
 
     file = request.files["file"]
@@ -428,8 +428,8 @@ def add_content():
     return: Status code
     """
     if isTokenInBlacklist(guard.read_token_from_header()):
-        return "This user is logged out", 401    
-    
+        return "This user is logged out", 401
+
     # Retrieve data from request
     file = request.files["file"]
     fruit_type = request.form.get("fruittype")
@@ -439,15 +439,15 @@ def add_content():
     refrigerated = False
     if request.form.get("refrigerated") == 'true':
         refrigerated = True
-    
+
     # Checks if the file exists
     if file.filename == "":
         return "Upload a file", 400
-    
+
     # Checks if image is in wrong format
     if not allowed_file(file.filename):
         return "Upload png or jpeg image only", 400
-    
+
     # Generate new image id
     image_id = uuid.uuid4().int & (1<<32) -1
     # Check if the uid is already in the database
@@ -455,9 +455,9 @@ def add_content():
     while pid_query is not None:
         image_id = uuid.uuid4().int & (1<<32) -1
         pid_query = images.query.filter_by(pid=image_id).first()
-    
-    
-    # Get temperature and humidity from weather api from city 
+
+
+    # Get temperature and humidity from weather api from city
     if refrigerated:
         temperature = 3
         humidity = 40
@@ -466,20 +466,20 @@ def add_content():
         humidity = get_humidity(latitude, longitude)
 
     user = users.query.filter_by(id= current_user_id()).first()
-    file = file.read() # Save binary to a variable so it can be used twice. 
+    file = file.read() # Save binary to a variable so it can be used twice.
 
     # Access AI server to get prediction
-    url = "http://127.0.0.1:8000/predict"
+    url = "http://ml:8000/predict"
     response = requests.post(url=url, files={'file': file})
     try:
         predicted_expiry = response.json()["results"][0]["prediction"]
         if predicted_expiry == "expired":
             return "Product is already expired!", 406
-            
+
         predicted_expiry = predicted_expiry.split(" ")[0]
     except:
         return "No fruit detected in image!", 406
-        # Process prediction result (convert to integer and get average)
+    # Process prediction result (convert to integer and get average)
     day_range = list(map(int, predicted_expiry.split("-")))
     avg = round(sum(day_range) / len(day_range))
     prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y") # Expiry Date
@@ -487,7 +487,7 @@ def add_content():
     print(purchase_date)
     # Add image metadata to database
     image = images(pid = image_id,
-    id = current_user_id(), 
+    id = current_user_id(),
     prediction = avg,
     feedback = None,
     upload_date = datetime.now(),
@@ -521,16 +521,16 @@ def get_user_records():
     query = request.args.to_dict(flat=False)
 
     uid = current_user_id() # Get User ID
-    if query["consumed"][0] == "hide": 
+    if query["consumed"][0] == "hide":
         filters = images.query.filter_by(id=uid, consumed=False)
     else:
         filters = images.query.filter_by(id=uid)
 
-    if query["disposed"][0] == "hide": 
+    if query["disposed"][0] == "hide":
         filters = filters.filter_by(id=uid, disposed=False)
 
     count = filters.count()
-    
+
     order_with = None
     match query["sort"][0]:
         case "imageId": order_with = "pid"
@@ -543,12 +543,12 @@ def get_user_records():
         case "daysNotify": order_with = "notification_days"
         case "consumeDate": order_with = "consume_date"
         case "disposeDate": order_with = "dispose_date"
-    
-    if query["order"][0] == "desc": 
+
+    if query["order"][0] == "desc":
         filters = filters.order_by(desc(text(order_with)))
-    else: 
+    else:
         filters = filters.order_by(text(order_with))
-    
+
 
     offset = (int(query["page"][0])-1)*int(query["size"][0])
     filters = filters.offset(offset).limit(int(query["size"][0]))
@@ -558,7 +558,7 @@ def get_user_records():
         # Convert prediction(integer days) to a date
         if image.prediction:
             prediction = image.upload_date + timedelta(days=image.prediction)
-        else: 
+        else:
             prediction = None
 
         result.append({
@@ -591,11 +591,11 @@ def unconsume():
     consume_image = images.query.filter_by(pid=image_id).first()
     if not consume_image:
         return "Image id not found", 404
-    
+
     # Check if image is already disposed
     if consume_image.disposed:
         return "Image already disposed. Cannot unconsume", 409
-    
+
     consume_image.consume_date = None
     consume_image.consumed = not consume_image.consumed
     db.session.commit()
@@ -619,7 +619,7 @@ def consume():
     # Check if image is already disposed
     if consume_image.disposed:
         return "Image already disposed. Cannot consume", 409
-    
+
     # Change the consumed date to todays date minus days
     days_ago = int(request.args.get('days'))
     consume_image.consume_date = datetime.now() - timedelta(days_ago)
@@ -646,7 +646,7 @@ def undispose():
     # Check if image is already consumed
     if dispose_image.consumed:
         return "Image already consumed. Cannot undispose", 409
-    
+
     dispose_image.dispose_date = None
     dispose_image.disposed = not dispose_image.disposed
     db.session.commit()
@@ -670,7 +670,7 @@ def dispose():
     # Check if image is already consumed
     if dispose_image.consumed:
         return "Image already consumed. Cannot dispose", 409
-    
+
     # Change the consumed date to todays date minus days
     days_ago = int(request.args.get('days'))
     dispose_image.dispose_date = datetime.now() - timedelta(days_ago)
@@ -781,7 +781,7 @@ def add_feedback():
     """
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
-    
+
     return
 
 

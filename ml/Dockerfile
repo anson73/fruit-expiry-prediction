@@ -16,7 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
-WORKDIR /app
+WORKDIR /ml
 
 
 
@@ -33,10 +33,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Copy the source code into the container.
 COPY . .
 
-# Expose the port that the application listens on.
-EXPOSE 8000
+
 
 RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 
+# Expose the port that the application listens on.
+EXPOSE 8000
 # Run the application.
-CMD uvicorn 'app.main:app' --host=0.0.0.0 --port=8000
+CMD ["uvicorn", "app.main:app", "--host=0.0.0.0"]
