@@ -13,7 +13,7 @@ SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.gif')
 
 class Dataset(torch.utils.data.Dataset):
     """
-
+    Custom pytorch dataset for testing the classification model
     """
     def __init__(self, dataset_path:str, encoder:Dict[str, int], transform=None):
         self.dataset_path = dataset_path
@@ -68,7 +68,6 @@ def evaluate_model(model:nn.Module, test_loader):
         If the model accuracy falls below the specified margin_accuracy.
     """
     correct_pred = 0
-    total = len(test_loader)
     all_logits = []
     all_outputs = []
     all_preds = []
@@ -84,11 +83,10 @@ def evaluate_model(model:nn.Module, test_loader):
             all_outputs.extend(outputs.cpu().numpy())
 
             # Calculate metrics
-            total += len(outputs)
             correct_pred += (preds == outputs).sum().item()
 
     # Calculate accuracy
-    accuracy = 100 * correct_pred / total
+    accuracy = 100 * correct_pred / len(all_outputs)
     top_2_accuracy = top_k_accuracy_score(all_outputs, all_logits, k=2) * 100
     mae = mean_absolute_error(all_outputs, all_preds)
     print(f"Test Loss: {mae:.4f}, Accuracy: {accuracy:.2f}%, Top 2 accuracy: {top_2_accuracy:.2f}%")
