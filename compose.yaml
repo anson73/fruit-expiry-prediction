@@ -1,9 +1,11 @@
 services:
   ml:
+    container_name: ml
     build: ./ml
     ports:
       - "8000:8000"
   app:
+    container_name: app
     build: ./backend
     volumes:
       - /app/instance
@@ -12,6 +14,7 @@ services:
     depends_on:
       - ml
   frontend:
+    container_name: frontend
     build: ./frontend
     ports:
       - "3000:3000"
