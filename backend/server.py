@@ -159,7 +159,7 @@ def EmailAlert():
                         email = users.query.filter_by(id = image.id).first().email
                         msg = EmailMessage(
                             "Expiry Alert",
-                            f"{image.fruit.title()} is about to expire in {((image.upload_date + timedelta(days=image.prediction)) - datetime.now()).days} days",
+                            f"{image.fruit.title()}({image.id}) which was purchased on {image.purchase_date.date()} is about to expire in {((image.upload_date + timedelta(days=image.prediction)) - datetime.now()).days} days",
                             "digitalhaven42@gmail.com",
                             [f"{email}"]
                         )
