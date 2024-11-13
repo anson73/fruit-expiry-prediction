@@ -30,7 +30,7 @@ app.config['SCHEDULER_API_ENABLED'] = True
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USERNAME'] = 'digitalhaven42@gmail.com'
-app.config['MAIL_PASSWORD'] = 'zgrk rcew cjif cosb'     #TODO: remove key from acc and abstract
+app.config['MAIL_PASSWORD'] = 'mjxt tzvq zajb ldrv'     #TODO: remove key from acc and abstract
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 
@@ -143,7 +143,7 @@ def ClearBlacklist():
                 counter += 1
         print(f"{counter} Tokens cleared from the blacklist")
 
-@scheduler.task('interval', id='Alert', hours = 6) # 6 hours
+@scheduler.task('interval', id='Alert', minute = 1) # 6 hours
 def EmailAlert():
     with scheduler.app.app_context():
         print(f"Scheduled Mailing Cycle Started")
