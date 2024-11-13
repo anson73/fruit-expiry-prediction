@@ -143,7 +143,7 @@ def ClearBlacklist():
                 counter += 1
         print(f"{counter} Tokens cleared from the blacklist")
 
-@scheduler.task('interval', id='Alert', minute = 1) # 6 hours
+@scheduler.task('interval', id='Alert', minutes = 1) # 6 hours
 def EmailAlert():
     with scheduler.app.app_context():
         print(f"Scheduled Mailing Cycle Started")
