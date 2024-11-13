@@ -73,10 +73,15 @@ const Prediction = () => {
               borderRadius: "10px",
               justifyContent: "center",
               alignItems: "center",
+              overflow: "hidden",
             }}
           >
             {image ? (
-              <img src={imagepreview} alt="Uploaded" />
+              <img
+                src={imagepreview}
+                alt="Uploaded"
+                style={{ width: "100%", height: 550 }}
+              />
             ) : (
               <Typography>Please upload the image</Typography>
             )}
@@ -162,7 +167,9 @@ const Prediction = () => {
           >
             Predict
           </Button>
-          <Typography id='prediction-result'>Estimated Expiry: {prediction}</Typography>
+          <Typography id="prediction-result">
+            Estimated Expiry: {prediction}
+          </Typography>
 
           <Box sx={{ marginTop: 8 }}></Box>
         </Grid>
