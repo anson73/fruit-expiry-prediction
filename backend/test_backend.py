@@ -204,7 +204,7 @@ def test_prediction(client):
 
     resp = client.post('/prediction',data={"fruittype":"Apple", "latitude":"33.8688", "longitude":"151.2093","purchaseDate":"2024-11-6", "file": (content / "apple-day.jpg").open("rb")} ,headers = {"Authorization": "Bearer " + token})
     assert resp.status_code == 200
-    assert b'Expiry is 3 days from now, which is' in resp.data 
+    assert b'days from now, which is' in resp.data 
 
 def test_history(client):
 

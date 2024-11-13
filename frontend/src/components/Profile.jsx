@@ -27,6 +27,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const [image, setImage] = React.useState(null);
   const [imagepreview, setimagepreview] = React.useState(null);
+  const [imageName, setimageName] = React.useState(null);
 
   React.useEffect(() => {
     const fetchProfile = async () => {
@@ -85,10 +86,13 @@ const Profile = () => {
   const handleImageUpdate = (event) => {
     const file = event.target.files[0];
     if (file) {
+      const fileName = file.name;
+
       const url = URL.createObjectURL(file);
       setImage(file);
       setimagepreview(url);
       console.log(url);
+      setimageName(fileName);
     }
   };
 
@@ -187,6 +191,7 @@ const Profile = () => {
           alt="Profile Image"
           src={imagepreview}
           style={{ width: "15rem", height: "15rem" }}
+          imgProps={{ name: imageName }}
         />
         <Button
           id="AvatarBotton"
