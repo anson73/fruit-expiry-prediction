@@ -440,6 +440,10 @@ def add_content():
     if request.form.get("refrigerated") == 'true':
         refrigerated = True
 
+    # Check if location data exists
+    if latitude is "" or longitude is "":
+        return "Please allow access to location", 400
+    
     # Checks if the file exists
     if file.filename == "":
         return "Upload a file", 400
