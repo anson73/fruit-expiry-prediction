@@ -441,7 +441,7 @@ def add_content():
         refrigerated = True
 
     # Check if location data exists
-    if latitude is "" or longitude is "":
+    if latitude == "" or longitude == "":
         return "Please allow access to location", 400
     
     # Checks if the file exists
