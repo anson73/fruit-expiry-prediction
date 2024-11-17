@@ -5,6 +5,7 @@ import Modal from "@mui/material/Modal";
 import dayjs from "dayjs";
 import Typography from "@mui/material/Typography";
 
+// A view details page presents all the details of a selected product
 export default function DetailsPage(props) {
   return (
     <Modal open={props.detailsOpen}>

@@ -8,6 +8,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 
+// A pop-up page allowing the user to mark a product as being disposed
 export default function DisposalPage(props) {
   const [days, setDays] = React.useState(0);
   const [disableSubmit, setDisableSubmit] = React.useState(false);

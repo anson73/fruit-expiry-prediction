@@ -24,6 +24,7 @@ import DisposalPage from "./DisposalPage";
 import DetailsPage from "./DetailsPage";
 import { useNavigate } from "react-router-dom";
 
+// Table header of the prediction history table
 function EnhancedTableHead(props) {
   const { order, orderBy, onRequestSort } = props;
   const createSortHandler = (property) => (event) => {
@@ -98,6 +99,7 @@ EnhancedTableHead.propTypes = {
   rowCount: PropTypes.number.isRequired,
 };
 
+// A table which presents all prediction histories of the authenicated user
 export default function EnhancedTable(props) {
   const [dense, setDense] = React.useState(false);
   const [rows, setRows] = React.useState([]);

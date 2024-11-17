@@ -2,6 +2,7 @@
 import dayjs from "dayjs";
 
 describe("<history testing />", () => {
+  // Test if all critical fields in the history page renders
   it("Renders all fields", () => {
     cy.visit("http://localhost:3000/register");
     cy.get("#email").type("997@gmail.com");
@@ -27,6 +28,7 @@ describe("<history testing />", () => {
     cy.get("#daysNotify").should("exist");
   });
 
+  // Test if the prediction history correctly loads in the history page
   it("Shows the prediction history", () => {
     cy.visit("http://localhost:3000/register", {
       onBeforeLoad({ navigator }) {
@@ -84,6 +86,8 @@ describe("<history testing />", () => {
       });
   });
 
+  // Test if the notification date button works as expected and if the alert button
+  // would appear when a product is about to expire
   it("Change Notification Date / Alert Button", () => {
     cy.visit("http://localhost:3000/register", {
       onBeforeLoad({ navigator }) {
@@ -136,6 +140,8 @@ describe("<history testing />", () => {
     cy.get("#alert-page").should("be.visible");
   });
 
+  // Test if the a product has been successfully removed from the system
+  // when the delete button has been clicked
   it("Delete history", () => {
     cy.visit("http://localhost:3000/register", {
       onBeforeLoad({ navigator }) {
@@ -180,6 +186,8 @@ describe("<history testing />", () => {
     cy.get("#history-table-content").find("tr").should("have.length", 0);
   });
 
+  // Test if a product has successfully been consumed and if the hide consumed
+  // button works as expected
   it("Consume/Unconsume/Hide Consumed", () => {
     cy.visit("http://localhost:3000/register", {
       onBeforeLoad({ navigator }) {
@@ -241,6 +249,8 @@ describe("<history testing />", () => {
     cy.get("#history-table-content").find("tr").should("have.length", 0);
   });
 
+  // Test if a product has successfully been disposed and if the hide disposed
+  // button works as expected
   it("Dispose/Undispose/Hide Disposed", () => {
     cy.visit("http://localhost:3000/register", {
       onBeforeLoad({ navigator }) {

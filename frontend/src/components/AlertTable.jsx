@@ -1,18 +1,17 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-
-import Modal from "@mui/material/Modal";
-import Typography from "@mui/material/Typography";
-
 import Table from "@mui/material/Table";
+import Modal from "@mui/material/Modal";
+import Button from "@mui/material/Button";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
+import Typography from "@mui/material/Typography";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 
+// An alert table showing the list of products that are about to expire
 export default function AlertTable(props) {
   return (
     <Modal open={props.alertOpen}>

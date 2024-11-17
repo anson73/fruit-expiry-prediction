@@ -1,6 +1,7 @@
 import React from "react";
 import Typography from "@mui/material/Typography";
 
+// The footer and disclaimer section of the system
 const Footer = () => {
   return (
     <Typography
@@ -12,7 +13,7 @@ const Footer = () => {
         height: "2px",
       }}
     >
-      Freshness Prediction Engine - COMP3900H11ADigitalHaven 2023 ©
+      Freshness Prediction Engine - COMP3900H11ADigitalHaven 2024 ©
     </Typography>
   );
 };

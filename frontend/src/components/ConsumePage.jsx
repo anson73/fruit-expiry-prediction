@@ -1,13 +1,14 @@
+import dayjs from "dayjs";
 import * as React from "react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import dayjs from "dayjs";
 import Modal from "@mui/material/Modal";
+import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
+// A pop-up page allowing the user to mark a product as being consumed
 export default function ConsumePage(props) {
   const [days, setDays] = React.useState(0);
   const [disableSubmit, setDisableSubmit] = React.useState(false);
