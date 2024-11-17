@@ -529,7 +529,7 @@ def add_content():
     db.session.add(image)
     db.session.commit()
 
-    return f"Expiry is {shelflife} days from now, which is {prediction} {temperature} {humidity} {avg}", 200
+    return f"Expiry is {shelflife} days from now, which is {prediction}", 200
 
 
 
