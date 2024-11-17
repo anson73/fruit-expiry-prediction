@@ -136,7 +136,7 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def Temp_formula(temp, humidity, shelflife):
-    
+
     t = temp + 273.15
 
     # Temperature adjustment factor (Arrhenius component)
@@ -507,13 +507,14 @@ def add_content():
     # Process prediction result (convert to integer and get average)
     day_range = list(map(int, predicted_expiry.split("-")))
     avg = round(sum(day_range) / len(day_range))
-    prediction = (date.today() + timedelta(days=avg)).strftime("%d/%m/%Y") # Expiry Date
+    shelflife = Temp_formula(temperature,humidity,avg)
+    prediction = (date.today() + timedelta(days=shelflife)).strftime("%d/%m/%Y") # Expiry Date
 
     print(purchase_date)
     # Add image metadata to database
     image = images(pid = image_id,
     id = current_user_id(),
-    prediction = avg,
+    prediction = shelflife,
     feedback = None,
     upload_date = datetime.now(),
     purchase_date = datetime.strptime(purchase_date, '%Y-%m-%d').date(),
@@ -528,7 +529,7 @@ def add_content():
     db.session.add(image)
     db.session.commit()
 
-    return f"Expiry is {avg} days from now, which is {prediction}", 200
+    return f"Expiry is {shelflife} days from now, which is {prediction} {temperature} {humidity} {avg}", 200
 
 
 
