@@ -19,3 +19,24 @@ To ensure the functionality and accuracy of the detection model, use the followi
 ```bash
 cd mlpytest test/detection_test.py
 ```
+
+## Front-end Installation, Operation and Testing guide
+
+To run the front-end of this system without using docker, please following the instruction below
+
+### Installation and Operation
+
+To install and use this product frontend, navigate to the `frontend` directory and execute the following command:
+
+```bash
+npm install
+npm start
+```
+
+### Front-end end-to-end Testing
+
+To test the frontend operations and components, use the following command after navigating to the ml directory and installing cypress:
+
+```bash
+npx cypress open
+```
