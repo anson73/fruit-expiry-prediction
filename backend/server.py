@@ -10,6 +10,8 @@ import atexit
 from flask_apscheduler import APScheduler
 from flask_mailman import Mail, EmailMessage
 import requests
+from dotenv import load_dotenv
+import os
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 DEFAULT_PICTURE_PATH = 'Asset/Default.png'
@@ -20,7 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # add secret key TODO CHANGE THE KEY
-app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
 app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 5}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
@@ -30,7 +32,7 @@ app.config['SCHEDULER_API_ENABLED'] = True
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USERNAME'] = 'digitalhaven42@gmail.com'
-app.config['MAIL_PASSWORD'] = 'mjxt tzvq zajb ldrv'     #TODO: remove key from acc and abstract
+app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_API_KEY')
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 
@@ -441,7 +443,7 @@ def add_content():
         refrigerated = True
 
     # Check if location data exists
-    if latitude is "" or longitude is "":
+    if latitude == "" or longitude == "":
         return "Please allow access to location", 400
     
     # Checks if the file exists

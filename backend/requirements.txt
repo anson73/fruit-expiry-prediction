@@ -10,3 +10,4 @@ sqlalchemy
 flask_apscheduler
 flask_mailman
 pytest
+python-dotenv
