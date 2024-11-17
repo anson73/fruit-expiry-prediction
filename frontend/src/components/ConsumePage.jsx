@@ -86,6 +86,7 @@ export default function ConsumePage(props) {
           style={{
             width: "100%",
           }}
+          id="submit-consume"
         >
           Submit
         </Button>
@@ -95,6 +96,7 @@ export default function ConsumePage(props) {
           style={{
             width: "100%",
           }}
+          id="cancel-consume"
         >
           Cancel
         </Button>

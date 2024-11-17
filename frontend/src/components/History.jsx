@@ -213,6 +213,7 @@ const History = (props) => {
         sx={{
           textAlign: "center",
         }}
+        id="welcome-message"
       >
         <h1>Welcome! This is your freshness prediction history!</h1>
       </Typography>
@@ -223,6 +224,7 @@ const History = (props) => {
           justifyContent: "center",
           alignItems: "center",
         }}
+        id="history-table"
       >
         <HistoryTable
           historyData={history}
