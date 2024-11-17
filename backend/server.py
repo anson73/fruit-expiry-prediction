@@ -22,7 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # add secret key TODO CHANGE THE KEY
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 5}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
@@ -333,7 +333,6 @@ def view_profile():
 
 
 @app.route('/logout', methods=['POST'])
-@auth_required
 def user_logout():
     """
     Route for user logout
@@ -445,7 +444,7 @@ def add_content():
     # Check if location data exists
     if latitude == "" or longitude == "":
         return "Please allow access to location", 400
-    
+
     # Checks if the file exists
     if file.filename == "":
         return "Upload a file", 400
