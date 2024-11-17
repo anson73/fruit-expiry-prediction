@@ -1,6 +1,10 @@
 import requests
+import os
+from dotenv import load_dotenv
 
-api_key = "3557ceb5ce7bea3f69f0a02fa88342db" # Need to make secret on GitHub
+load_dotenv()
+
+api_key = os.getenv('WEATHER_API') 
 
 def kelvin_to_celsius(kelvin):
     return round(kelvin - 273.15)

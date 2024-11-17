@@ -10,17 +10,25 @@ import atexit
 from flask_apscheduler import APScheduler
 from flask_mailman import Mail, EmailMessage
 import requests
+from dotenv import load_dotenv
+import os
+import math
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 DEFAULT_PICTURE_PATH = 'Asset/Default.png'
+R = 8.314
+EA = 50000
+T0 = 298.15
+H0 = 30
+B = 0.5
 
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# add secret key TODO CHANGE THE KEY
-app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
+# add secret key
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 5}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['PRAETORIAN_ROLES_DISABLED'] = True
@@ -30,7 +38,7 @@ app.config['SCHEDULER_API_ENABLED'] = True
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USERNAME'] = 'digitalhaven42@gmail.com'
-app.config['MAIL_PASSWORD'] = 'mjxt tzvq zajb ldrv'     #TODO: remove key from acc and abstract
+app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_API_KEY')
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 
@@ -127,9 +135,23 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def Temp_formula(temp, humidity, prd):
+def Temp_formula(temp, humidity, shelflife):
+    
+    t = temp + 273.15
 
-    return 0
+    # Temperature adjustment factor (Arrhenius component)
+    temp_factor = math.exp((EA / R) * ((1 / T0) - (1 / t)))
+    
+    # Humidity adjustment factor
+    humidity_factor = (H0 / humidity) ** B
+    
+    # Calculate new shelf life
+    sl = shelflife * temp_factor * humidity_factor
+    result = math.floor(sl)
+
+    return result
+
+
 # SCHEDULED FUNCTIONS ----------------------------------------------------------------------------------
 @scheduler.task('interval', id='blacklist', hours = 2)
 def ClearBlacklist():
@@ -331,7 +353,6 @@ def view_profile():
 
 
 @app.route('/logout', methods=['POST'])
-@auth_required
 def user_logout():
     """
     Route for user logout
@@ -443,7 +464,7 @@ def add_content():
     # Check if location data exists
     if latitude == "" or longitude == "":
         return "Please allow access to location", 400
-    
+
     # Checks if the file exists
     if file.filename == "":
         return "Upload a file", 400
