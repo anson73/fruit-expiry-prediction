@@ -14,20 +14,25 @@ from dotenv import load_dotenv
 import os
 import math
 
+# Image Constants
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 DEFAULT_PICTURE_PATH = 'Asset/Default.png'
-R = 8.314
-EA = 50000
-T0 = 298.15
-H0 = 30
-B = 0.5
 
+# Temperature Formula Constants
+
+R = 8.314 # Universal Gas Constant
+EA = 50000  # Activation Energy of the degradation reaction
+T0 = 298.15 # Base Temperature in Kelvin
+H0 = 50 # Inital Relative Humidity
+B = 0.5 # Humidity Sensitivity Coefficient
+
+load_dotenv()
+# Initalise the flask app
 app = Flask(__name__)
 
+# Flask Configs
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
-
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# add secret key
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 5}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
@@ -49,7 +54,8 @@ cors = CORS()
 scheduler = APScheduler()
 mail = Mail()
 
-# Create database model (add authentication session token)
+# Create database model
+# Stores User Information 
 class users(db.Model):
     id = db.Column(db.String(100), primary_key = True)
     username = db.Column(db.String(50), nullable = False)
@@ -74,7 +80,7 @@ class users(db.Model):
     def rolenames(self):
         return []
 
-
+# Stores images and their metadata 
 class images(db.Model):
     pid = db.Column(db.Integer, primary_key = True)
     id = db.Column("id", db.ForeignKey(users.id))
@@ -95,7 +101,8 @@ class images(db.Model):
 
     def __repr__(self):
         return '<PID %r>' % self.pid
-
+    
+# List of Tokens which have been logged out but have no expired
 class token_blacklist(db.Model):
     token = db.Column(db.String(400), primary_key = True)
     expiry_date = db.Column(db.DateTime, nullable = False)
@@ -108,21 +115,25 @@ class token_blacklist(db.Model):
 
 # create the database if it does not exist
 app.app_context().push()
-
 db.init_app(app)
 with app.app_context():
     db.create_all()
+
 # Initialize the flask-praetorian instance for the app
 guard.init_app(app, users)
-# Initializes CORS so that the api_tool can talk to the example app
+
+# Initializes CORS 
 cors.init_app(app)
+
 # Initalizes Background scheduler
 scheduler.init_app(app)
 scheduler.start()
+
 # Initalizer mailer
 mail.init_app(app)
 
 #HELPER FUNCTIONS --------------------------------------------------------------------------------------
+
 # Checks if the token has been logged out
 def isTokenInBlacklist(token):
     dbToken = token_blacklist.query.filter_by(token=token).one_or_none()
@@ -135,8 +146,9 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Adjusts the predicted shelf life based on storage conditions
 def Temp_formula(temp, humidity, shelflife):
-
+    # Convert Celsius to Kelvin
     t = temp + 273.15
 
     # Temperature adjustment factor (Arrhenius component)
@@ -153,6 +165,8 @@ def Temp_formula(temp, humidity, shelflife):
 
 
 # SCHEDULED FUNCTIONS ----------------------------------------------------------------------------------
+
+# Every 2 hours clears tokens which have expired for the blacklist
 @scheduler.task('interval', id='blacklist', hours = 2)
 def ClearBlacklist():
     with scheduler.app.app_context():
@@ -165,7 +179,9 @@ def ClearBlacklist():
                 counter += 1
         print(f"{counter} Tokens cleared from the blacklist")
 
-@scheduler.task('interval', id='Alert', minutes = 1) # 6 hours
+
+# Every 3 hours sends and email alert to users about approaching expiry dates
+@scheduler.task('interval', id='Alert', hours = 3) 
 def EmailAlert():
     with scheduler.app.app_context():
         print(f"Scheduled Mailing Cycle Started")
@@ -193,6 +209,7 @@ def EmailAlert():
 
 
 # USER FUNCTIONS ----------------------------------------------------------------------------------
+
 @app.route('/register', methods=['POST'])
 def user_register():
     """
@@ -536,11 +553,20 @@ def add_content():
 @app.route('/history', methods=['GET'])
 @auth_required
 def get_user_records():
+
     """
-    # Example: /history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc
-    Route to get all images/videos posted by the user
-    return: List of Dictionaries
+    Route to Retrieve History of Predictions
+
+    Header:
+        Requires token in header in format:
+        Authorization : Bearer <INSERT JWT TOKEN>
+
+    Example: /history?consumed=unhide&disposed=unhide&page=1&size=5&sort=temperature&order=asc
+
+
+    return: Return List of Dictionaries and Count of rows
     """
+
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
 
@@ -608,10 +634,11 @@ def get_user_records():
 def unconsume():
     """
     Route to change the consumed status of an image
+
+    Example usage: /history/unconsume?imageid=1
+
     return: 200 for success, 404 if imageid not found
     """
-
-    # Example usage: /history/unconsume?imageid=1
 
     image_id = int(request.args.get('imageid'))
     consume_image = images.query.filter_by(pid=image_id).first()
@@ -632,10 +659,11 @@ def unconsume():
 def consume():
     """
     Route to directly change the consumed date of the image
-    return: 200 for success, 404 if imageid not found
-    """
 
-    # Example usage: /history/consume?imageid=4&days=4
+    Example usage: /history/consume?imageid=4&days=4
+
+    Return: 200 for success, 404 if imageid not found
+    """
 
     image_id = int(request.args.get('imageid'))
     consume_image = images.query.filter_by(pid=image_id).first()
@@ -659,10 +687,11 @@ def consume():
 def undispose():
     """
     Route to change the disposed status of an image
-    return: 200 for success, 404 if imageid not found
-    """
 
-    # Example usage: /history/undispose?imageid=1
+    Example usage: /history/undispose?imageid=1
+
+    Return: 200 for success, 404 if imageid not found
+    """
 
     image_id = int(request.args.get('imageid'))
     dispose_image = images.query.filter_by(pid=image_id).first()
@@ -683,10 +712,11 @@ def undispose():
 def dispose():
     """
     Route to directly change the disposed date of the image
-    return: 200 for success, 404 if imageid not found
-    """
 
-    # Example usage: /history/dispose?imageid=4&days=4
+    Example usage: /history/dispose?imageid=4&days=4
+
+    Return: 200 for success, 404 if imageid not found
+    """
 
     image_id = int(request.args.get('imageid'))
     dispose_image = images.query.filter_by(pid=image_id).first()
@@ -710,10 +740,11 @@ def dispose():
 def notification_days():
     """
     Route to change expiry notification days for an image
-    return: 200 for success, 404 if imageid not found
-    """
 
-    # Example usage: /history/notification?imageid=1&days=1
+    Example usage: /history/notification?imageid=1&days=1
+
+    Return: 200 for success, 404 if imageid not found
+    """
 
     image_id = int(request.args.get('imageid'))
     selected_image = images.query.filter_by(pid=image_id).first()
@@ -729,10 +760,11 @@ def notification_days():
 def delete():
     """
     Route to delete a selected image
-    return: 200 for success, 404 if imageid not found
-    """
 
-    # Example usage: /history/delete?imageid=1
+    Example usage: /history/delete?imageid=1
+
+    Return: 200 for success, 404 if imageid not found
+    """
 
     image_id = int(request.args.get('imageid'))
     delete_image = images.query.filter_by(pid=image_id).first()
@@ -748,10 +780,14 @@ def delete():
 @auth_required
 def alert():
     """
-    # Example usage: /history/alert
+    
     Route to get nearly expired products from database for history page popup
-    return: 200 for success, 404 if imageid not found
+
+    Example usage: /history/alert
+
+    Return: 200 for success, 404 if imageid not found
     """
+
     if isTokenInBlacklist(guard.read_token_from_header()):
         return "This user is logged out", 401
 
@@ -789,10 +825,19 @@ def alert():
 
 @app.route('/image', methods=['GET'])
 def get_image():
+    """
+    Route to retreive an image
+
+    Example usage: /image?imageid=1
+
+    Return: image
+    """
     image_id = int(request.args.get('imageid'))
     image = images.query.filter_by(pid=image_id).first()
     return image.data
 
+
+# Not Currently In Use
 @app.route('/history', methods=['POST'])
 @auth_required
 def add_feedback():
@@ -810,7 +855,7 @@ def add_feedback():
 
     return
 
-
+# On App Close shutdown scheduler process
 atexit.register(lambda: scheduler.shutdown(wait=False))
 
 if __name__ == '__main__':
