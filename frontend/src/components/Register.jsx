@@ -14,17 +14,26 @@ import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 
 export default function Register(props) {
+  /* State variables to store user input, like store eamil, password, 
+    password confirmation and username.
+  */
   const [email, setEmail] = React.useState('')
   const [password, setPassword] = React.useState('')
   const [passwordConfirmation, setPasswordConfirmation] = React.useState('')
   const [name, setName] = React.useState('')
   const navigate = useNavigate()
+  /* State variables to control visibility of password
+  */
   const [showPassword, setShowPassword] = React.useState(false)
   const [showPasswordConfirmation, setShowPasswordConfirmation] =
     React.useState(false)
+  // State for handling error messages and Snackbar visibility
   const [showSnackbar, setShowSnackbar] = React.useState(false)
   const [snackbarMessage, setSnackbarMessage] = React.useState('')
 
+  /* Toggles password visibility for the password field
+     Prevents the default action when clicking on the password visibiliyu icon
+  */
   const handleClickShowPassword = () => setShowPassword((show) => !show)
   const handleMouseDownPassword = (event) => {
     event.preventDefault()
@@ -35,14 +44,17 @@ export default function Register(props) {
     event.preventDefault()
   }
 
+  // Redirect the user to the history page if a token is already present
+
   React.useEffect(() => {
     if (props.token) {
       navigate('/history')
     }
   }, [props.token, navigate])
-
+  // handles the registration process
   const handleRegister = async () => {
     try {
+      // send a POST request to the registration endpoint
       const response = await fetch('http://localhost:5005/register', {
         method: 'POST',
         body: JSON.stringify({
@@ -52,31 +64,34 @@ export default function Register(props) {
           name,
         }),
         headers: {
-          'Content-type': 'application/json',
+          'Content-type': 'application/json',     // set the request content type to JSON
         },
       })
-
+      // Parse the JSON response fron the server
       const data = await response.json()
-
+      // handle errors or success based on the response status code
       if (response.status === 400 || response.status === 409) {
+        // display the error message from the server
         setSnackbarMessage(data)
         setShowSnackbar(true)
       } else if (response.status === 201 && data.access_token) {
+        // on successful registration, store the token and navigate to the profile page
         localStorage.setItem('token', data.access_token)
         props.setToken(data.access_token)
         navigate('/profile')
       }
     } catch (error) {
+      // handle network or server errors
       console.error('Registration error:', error)
       setSnackbarMessage('Registration failed. Please try again.')
       setShowSnackbar(true)
     }
   }
-
+  // handles the cancellation of registration and redirects to the landing page
   const handleCancel = () => {
     navigate('/landpage')
   }
-
+  // render the registration form
   return (
     <div
       className="registerPage"
@@ -109,6 +124,7 @@ export default function Register(props) {
           backgroundColor: '#ffffff',
         }}>
         <h2>Register</h2>
+        {/* email input field */}
         <TextField
           id="email"
           required
@@ -116,6 +132,7 @@ export default function Register(props) {
           variant="outlined"
           onChange={(e) => setEmail(e.target.value)}
         />
+        {/* Username input field */}
         <TextField
           id="userName"
           required
@@ -123,6 +140,7 @@ export default function Register(props) {
           variant="outlined"
           onChange={(e) => setName(e.target.value)}
         />
+        {/* Password input field */}
         <FormControl variant="outlined" required>
           <InputLabel htmlFor="outlined-adornment-password">
             Password
@@ -147,6 +165,7 @@ export default function Register(props) {
             onChange={(e) => setPassword(e.target.value)}
           />
         </FormControl>
+        {/* Password confirmation input field */}
         <FormControl variant="outlined" required>
           <InputLabel htmlFor="outlined-adornment-password-confirmation">
             Password Confirmation
@@ -175,6 +194,7 @@ export default function Register(props) {
             onChange={(e) => setPasswordConfirmation(e.target.value)}
           />
         </FormControl>
+        {/* Error message for mismatched passwords */}
         {password !== passwordConfirmation && (
           <p style={{ color: 'red' }}>
             The Password does not match! Please double check!
@@ -191,7 +211,7 @@ export default function Register(props) {
           Cancel
         </Button>
       </Box>
-
+      {/* Snackbar to display error messages */}
       <Snackbar
         open={showSnackbar}
         autoHideDuration={6000}

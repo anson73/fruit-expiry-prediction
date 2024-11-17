@@ -15,18 +15,20 @@ import Profile from "./components/Profile";
 import Landpage from "./components/Landpage";
 
 const PageList = () => {
+  // State for storing the user's authentication token and email
   const [token, setToken] = React.useState(null);
   const [email, setEmail] = React.useState("");
+  // For programmatic navigation
   const navigate = useNavigate();
-
+  // Check if a token exists in localStorage when the component mounts
   React.useEffect(() => {
     const checktoken = localStorage.getItem("token");
     if (checktoken) {
-      setToken(checktoken);
-      setEmail(localStorage.getItem("email"));
+      setToken(checktoken); // Set token in state
+      setEmail(localStorage.getItem("email")); // Set email in state
     }
   }, []);
-
+  // Logout function that clears token and email from localStorage and updates state
   const logout = async () => {
     const response = await fetch("http://localhost:5005/logout", {
       method: "POST",
@@ -37,22 +39,25 @@ const PageList = () => {
     });
     const data = await response;
     console.log(data);
+    // Check if the logout was successful
     if (data.status !== 200) {
       console.log("Logout Error");
     } else {
-      setToken(null);
-      localStorage.removeItem("token");
-      localStorage.removeItem("email");
-      navigate("/landpage");
+      setToken(null); // Clear token from state
+      localStorage.removeItem("token"); // Remove token from localStorage
+      localStorage.removeItem("email"); // Remove email from localStorage
+      navigate("/landpage"); // Redirect to the Landpage
     }
   };
-
+  // Define the list of pages based on whether the user is logged in or not
   const pages = token
     ? ["Prediction", "History", "Profile", "Logout"]
     : ["Register", "Login"];
 
+  // render the prediction form
   return (
     <>
+      {/* Main content area */}
       <Box
         style={{
           height: "calc(100vh - 118px)",
@@ -60,6 +65,7 @@ const PageList = () => {
           overflow: "auto",
         }}
       >
+        {/* Define routes for each page */}
         <Routes>
           <Route path="/" element={<Landpage />} />
           <Route
@@ -79,6 +85,7 @@ const PageList = () => {
           />
         </Routes>
       </Box>
+      {/* Footer and Bottom Navigation */}
       <Box
         style={{
           height: "110px",
@@ -87,6 +94,7 @@ const PageList = () => {
       >
         <hr />
         <Box>
+          {/* Bottom Navigation for page switching */}
           <BottomNavigation
             showLabels
             value={""}
@@ -98,6 +106,7 @@ const PageList = () => {
               }
             }}
           >
+            {/* Render BottomNavigationAction for each page */}
             {pages.map((page, idx) => {
               return (
                 <BottomNavigationAction
@@ -111,6 +120,7 @@ const PageList = () => {
           </BottomNavigation>
         </Box>
         <hr />
+        {/* Footer component */}
         <Footer />
       </Box>
     </>

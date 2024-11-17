@@ -1,21 +1,20 @@
-// register
-// 1. password  -> len, complexity,
-// 2. email -> format
 describe('<Login />', () => {
+  // Before each test, visit the homepage and click the login button
   beforeEach(() => {
     cy.visit('http://localhost:3000')
 
     cy.get('#Login').click()
     cy.url().should('include', '/login')
   })
+  // Test case: Ensure all necessary fields are visible on the login page
   it('renders all fields', () => {
-    // cy.visit('http://localhost:3000/login')
     cy.get('#email').should('be.visible')
     cy.get('#outlined-adornment-password').should('be.visible')
     cy.get('#login').should('be.visible')
     cy.get('#cancelButton').should('be.visible')
   })
 
+  // Test case: Attempt to login with a wrong email and password combination
   it('wrong email', () => {
     // cy.visit('http://localhost:3000/login')
     cy.get('#email').type('wrong@email.com')
@@ -26,6 +25,7 @@ describe('<Login />', () => {
     cy.contains('email not exist or password not correct').should('be.visible')
   })
 
+  // Test case: Attempt to login with a correct email but a wrong password
   it('wrong password', () => {
     // cy.visit('http://localhost:3000/login')
     cy.get('#email').type('z56@email.com')
@@ -35,7 +35,8 @@ describe('<Login />', () => {
 
     cy.contains('email not exist or password not correct').should('be.visible')
   })
-
+  
+  // Test case: testing success login
   it('successful logins', () => {
     cy.visit('http://localhost:3000/register')
     cy.get('#email').type('zqq2@gmail.com')
@@ -64,6 +65,7 @@ describe('<Login />', () => {
     
   })
 
+  // Test case: Cancel the login process and ensure user is redirected to the landing page
   it('successful cancel login', () => {
     cy.get('#cancelButton').click()
     cy.url().should('include', '/landpage')

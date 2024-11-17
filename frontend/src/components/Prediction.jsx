@@ -11,16 +11,29 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 // variable ? parta : partb
 const Prediction = () => {
+    /*
+  State variables to manage form inputs and other UI states
+  1.Store the uploaded image file
+  2.Store the preview URL of the uploaded image
+  3.Store the product label or fruit type
+  4.Store whether the product is refrigerated
+  5.Store the purchase date of the product
+  6.Disables the predict button if input is invalid
+  */
   const [image, setImage] = React.useState(null);
   const [imagepreview, setimagepreview] = React.useState(null);
   const [fruitType, setfruitType] = React.useState("");
   const [Refrigeration, setRefrigeration] = React.useState(false);
   const [PurchaseDate, setPurchaseDate] = useState(null);
   const [disableSubmit, setDisableSubmit] = useState(false);
+   // Stores user's latitude and longitude (from geolocation)
   const [latitude, setlatitude] = React.useState("");
   const [longitude, setlongitude] = React.useState("");
+  // Stores the prediction result from the server
   const [prediction, setPrediction] = React.useState([]);
+  // upload image seting
   const [imageName, setimageName] = React.useState(null);
+  // Handles image file selection and generates a preview
   const handleImageUpdate = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -31,24 +44,26 @@ const Prediction = () => {
       setimageName(fileName);
     }
   };
-
+  // Fetch user's geolocation when the component mounts
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((postion) => {
-      setlatitude(postion.coords.latitude);
-      setlongitude(postion.coords.longitude);
+      setlatitude(postion.coords.latitude); // Update latitude
+      setlongitude(postion.coords.longitude); // Update latitude
     });
   });
-
+  // Retrieve the user's authentication token from local storage
   const token = localStorage.getItem("token");
+  // Sends the input data to the server and fetches the prediction
   const handlePredict = async () => {
-    const data = new FormData();
+    const data = new FormData(); // Create a FormData object for multipart/form-data
+    // addpend image, fruitType, latitude, longitude, Refrigeration, PurchaseDate
     data.append("file", image);
     data.append("fruittype", fruitType);
     data.append("latitude", latitude);
     data.append("longitude", longitude);
     data.append("refrigerated", Refrigeration);
     data.append("purchaseDate", PurchaseDate);
-
+    // Send a POST request to the server with the input data
     const response = await fetch(`http://localhost:5005/prediction`, {
       method: "POST",
       headers: {
@@ -56,16 +71,20 @@ const Prediction = () => {
       },
       body: data,
     });
+    // Parse the server's response as plain text
     const res = await response.text();
-    setPrediction(res);
+    setPrediction(res); // Update the prediction state with the result
   };
+  // render the prediction form
   return (
     <Box sx={{ padding: 4, margin: 10 }}>
+      {/* Page header */}
       <Typography variant="h3" align="center" gutterBottom>
         Prediction
       </Typography>
 
       <Grid container spacing={2} justifyContent="center">
+        {/* Left side: Image upload and preview */}
         <Grid item xs={12} md={6}>
           <Box
             sx={{
@@ -90,7 +109,7 @@ const Prediction = () => {
               <Typography>Please upload the image</Typography>
             )}
           </Box>
-
+          {/* Image upload button */}
           <Button
             variant="contained"
             component="label"
@@ -103,6 +122,7 @@ const Prediction = () => {
             <input type="file" hidden onChange={handleImageUpdate} />
           </Button>
         </Grid>
+        {/* Input fields for prediction parameters */}
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
@@ -113,6 +133,7 @@ const Prediction = () => {
             onChange={(e) => setfruitType(e.target.value)}
             sx={{ marginBottom: 2 }}
           />
+          {/* Refrigeration status dropdown */}
           <FormControl
             id="refridgerationForm"
             fullWidth
@@ -130,6 +151,7 @@ const Prediction = () => {
               <MenuItem value={false}>False</MenuItem>
             </Select>
           </FormControl>
+          {/* Purchase date picker */}
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DesktopDatePicker
               label="Purchase Date"
@@ -147,6 +169,7 @@ const Prediction = () => {
               }}
             />
           </LocalizationProvider>
+          {/* Error message for invalid purchase date */}
           {disableSubmit ? (
             <Typography
               style={{
@@ -160,6 +183,7 @@ const Prediction = () => {
           ) : (
             <></>
           )}
+          {/* Submit button */}
           <Button
             variant="outlined"
             color="secondary"
@@ -171,6 +195,7 @@ const Prediction = () => {
           >
             Predict
           </Button>
+          {/* Display the prediction result */}
           <Typography id="prediction-result">
             Estimated Expiry: {prediction}
           </Typography>

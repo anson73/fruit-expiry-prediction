@@ -16,7 +16,18 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 
 const Profile = () => {
-  const [email, setEmail] = React.useState("");
+  /*
+  State variables to manage form inputs and other UI states
+  1.Store user's email address
+  2.Default notification days before expiry
+  3.current password entered by user 
+  4.New password entered by the user
+  5.confirmation of the new password
+  6.Toggles password visibility
+  7.Toggles snackbar visibility
+  8.Store the message for the snackbar
+  */
+  const [email, setEmail] = React.useState("");  
   const [daysNotify, setDaysNotify] = React.useState(3);
   const [password, setPassword] = React.useState("");
   const [newPassword, setNewPassword] = React.useState("");
@@ -24,26 +35,33 @@ const Profile = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [showSnackbar, setShowSnackbar] = React.useState(false);
   const [snackbarMessage, setSnackbarMessage] = React.useState("");
+  // React Router's navigation function 
   const navigate = useNavigate();
+  // srore the user's upload profile image
   const [image, setImage] = React.useState(null);
+  // url preview of the upload profile image and name of the upload image file
   const [imagepreview, setimagepreview] = React.useState(null);
   const [imageName, setimageName] = React.useState(null);
 
+  // Fetch profile details and profile picture when the component mounts
   React.useEffect(() => {
     const fetchProfile = async () => {
       try {
+        // Get the authentication token and Fetch profile details
         const token = localStorage.getItem("token");
         const response = await fetch("http://localhost:5005/profile", {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,  //Include the token in the Authorization header
             "Content-Type": "application/json",
           },
         });
+        // Update email field with the fetched data and default notification days
         if (response.ok) {
           const data = await response.json();
           setEmail(data.email);
           setDaysNotify(data.default_days);
+        // fetch error message
         } else {
           console.error("Failed to fetch profile data");
         }
@@ -51,22 +69,26 @@ const Profile = () => {
         console.error("Error fetching profile:", error);
       }
       try {
+        // Get the token again for fetching the profile image
         const token = localStorage.getItem("token");
+        // Fetch profile picture
         const response = await fetch(
           "http://localhost:5005/profile/picture/view",
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,  // Include token for authorization
               "Content-Type": "application/json",
             },
           }
         );
         if (response.ok) {
+          // Get the binary image data
           const data = await response.blob();
-          setImage(data);
-          const imageObjectURL = URL.createObjectURL(data);
-          setimagepreview(imageObjectURL);
+          setImage(data); // Store the image data
+          const imageObjectURL = URL.createObjectURL(data); // Generate a preview URL
+          setimagepreview(imageObjectURL); // Set the preview URL
+        // fetch error message
         } else {
           console.error("Failed to fetch profile image data");
         }
@@ -74,15 +96,18 @@ const Profile = () => {
         console.error("Error fetching profile image:", error);
       }
     };
-
+    // Call the function to fetch profile data
+    // Empty dependency array ensures this runs once on component mount
     fetchProfile();
   }, []);
 
+  // Toggle visibility of password fields
+  // Prevent default behavior for mouse down on the password visibility icon
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
-
+  // Handle image file upload
   const handleImageUpdate = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -95,11 +120,12 @@ const Profile = () => {
       setimageName(fileName);
     }
   };
-
+   // Handle form submission to update profile details
   const handleSubmit = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token"); // Retrieve token from localStorage
       console.log(token);
+      // Send profile details update request
       const response = await fetch("http://localhost:5005/profile", {
         method: "POST",
         headers: {
@@ -116,9 +142,9 @@ const Profile = () => {
 
       if (response.ok) {
         const data = await response.json();
-
+        // If profile details updated, upload the profile picture
         const imageUpload = new FormData();
-        imageUpload.append("file", image);
+        imageUpload.append("file", image); // Attach the image file
         try {
           console.log(token);
           const response = await fetch(
@@ -131,7 +157,7 @@ const Profile = () => {
               body: imageUpload,
             }
           );
-
+          // profile image updates success/error
           if (response.ok) {
             console.log("Profile image updated");
           } else {
@@ -143,21 +169,22 @@ const Profile = () => {
         }
 
         console.log("Profile updated:", data);
+        // Redirect to the history page
         navigate("/history");
       } else {
-        const errorData = await response.text();
-        setSnackbarMessage(errorData);
-        setShowSnackbar(true);
+        const errorData = await response.text(); // Get the error message from the server
+        setSnackbarMessage(errorData); // Display the error message in the Snackbar
+        setShowSnackbar(true); // Show the Snackbar
       }
     } catch (error) {
       console.error("Error updating profile:", error);
     }
   };
-
+  // Cancel and redirect to the history page
   const handleCancel = () => {
     navigate("/history");
   };
-
+  // render the profile form
   return (
     <div
       style={{
@@ -187,12 +214,14 @@ const Profile = () => {
           backgroundColor: "#ffffff",
         }}
       >
+        {/* Profile image */}
         <Avatar
           alt="Profile Image"
           src={imagepreview}
           style={{ width: "15rem", height: "15rem" }}
           imgProps={{ name: imageName }}
         />
+        {/* Button to upload a new profile picture */}
         <Button
           id="AvatarBotton"
           variant="contained"
@@ -204,7 +233,7 @@ const Profile = () => {
           Upload Avatar
           <input type="file" hidden onChange={handleImageUpdate} />
         </Button>
-
+        {/* Form fields for profile email */}
         <TextField
           id="email"
           required
@@ -213,7 +242,7 @@ const Profile = () => {
           value={email || ""}
           onChange={(e) => setEmail(e.target.value)}
         />
-
+        {/* Form fields for profile password */}
         <FormControl variant="outlined" required>
           <InputLabel>Password</InputLabel>
           <OutlinedInput
@@ -235,7 +264,7 @@ const Profile = () => {
             }
           />
         </FormControl>
-
+        {/* Form fields for profile new password */}
         <FormControl variant="outlined" required>
           <InputLabel>New Password</InputLabel>
           <OutlinedInput
@@ -257,7 +286,7 @@ const Profile = () => {
             }
           />
         </FormControl>
-
+        {/* Form fields for profile new password confirmation */}
         <FormControl variant="outlined" required>
           <InputLabel>New Password Confirmation</InputLabel>
           <OutlinedInput
@@ -279,7 +308,7 @@ const Profile = () => {
             }
           />
         </FormControl>
-
+        {/* Form fields for profile notificationTime */}
         <TextField
           id="notificationTime"
           required
@@ -289,15 +318,16 @@ const Profile = () => {
           value={daysNotify || ""}
           onChange={(e) => setDaysNotify(e.target.value)}
         />
-
+        {/* add submit button */}
         <Button variant="outlined" onClick={handleSubmit} id="SubmitBotton">
           Submit
         </Button>
+        {/* add cancel button */}
         <Button variant="outlined" onClick={handleCancel} id="CancelBotton">
           Cancel
         </Button>
       </Box>
-
+      {/* Snackbar to display error messages */}
       <Snackbar
         open={showSnackbar}
         autoHideDuration={6000}

@@ -2,6 +2,7 @@
 import dayjs from "dayjs";
 
 describe("<prediction testing />", () => {
+  // Test to ensure that all fields are rendered correctly on the prediction page
   it("renders all fields", () => {
     cy.visit("http://localhost:3000/register");
     cy.get("#email").type("8028@gmail.com");
@@ -28,6 +29,7 @@ describe("<prediction testing />", () => {
     cy.get("#predictButton").should("be.visible");
   });
 
+  // Test to check the standard operation flow after user registration
   it("Standard operation flow", () => {
     cy.visit("http://localhost:3000/register", {
       onBeforeLoad({ navigator }) {
@@ -72,6 +74,7 @@ describe("<prediction testing />", () => {
     cy.get("#prediction-result").should("contain.text", "Estimated Expiry");
   });
 
+  // Test for validating date selections, ensuring it is not a future date
   it("Test Date Selections", () => {
     cy.visit("http://localhost:3000/register");
     cy.get("#email").type("933752926@gmail.com");

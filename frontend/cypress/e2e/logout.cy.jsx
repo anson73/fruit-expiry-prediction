@@ -1,4 +1,5 @@
 describe('<Logout />', () => {
+    // Test case: Register a new user and then log them out
     it('register user first and logout', () => {
       cy.visit('http://localhost:3000/register')
       cy.get('#email').type('zqq10@gmail.com')
@@ -17,7 +18,7 @@ describe('<Logout />', () => {
         expect(token).to.be.null
       })
     })
-  
+    // Test case: Log in as an existing user and then log them out
     it('login user first and logout', () => {
       cy.visit('http://localhost:3000/register')
       cy.get('#email').type('zqq9@gmail.com')

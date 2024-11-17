@@ -1,15 +1,16 @@
 import Register from '../../src/components/Register'
 import React from 'react'
-// register
-// 1. password  -> len, complexity,
-// 2. email -> format
+
 describe('<Register />', () => {
+  // Runs before each test to navigate to the correct page and set up the test environment
   beforeEach(() => {
     cy.visit('http://localhost:3000')
 
     cy.get('#Register').click()
     cy.url().should('include', '/register')
   })
+
+  // Test to ensure all form fields are rendered correctly
   it('renders all fields', () => {
     cy.get('#email').should('be.visible')
     cy.get('#userName').should('be.visible')
@@ -17,6 +18,7 @@ describe('<Register />', () => {
     cy.get('#outlined-adornment-password-confirmation').should('be.visible')
   })
 
+  // Test to check the behavior when password and confirmation password do not match
   it('different password setting check', () => {
     cy.get('#outlined-adornment-password').type('123')
     cy.get('#outlined-adornment-password-confirmation').type('345')
@@ -25,7 +27,7 @@ describe('<Register />', () => {
     )
     cy.get('#submitButton').should('be.disabled')
   })
-
+  // Test for successfully entering valid registration information
   it('try to enter valid information', () => {
     cy.get('#email').type('z56@gmail.com')
     cy.get('#userName').type('Oswald')
@@ -37,7 +39,8 @@ describe('<Register />', () => {
 
     cy.get('#submitButton').click()
   })
-
+  
+  // Test to check the scenario when the email is already registered
   it('email already exist', () => {
     cy.get('#email').type('z56@gmail.com')
     cy.get('#userName').type('Oswald')

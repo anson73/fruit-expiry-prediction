@@ -1,4 +1,5 @@
 describe("<profile testing />", () => {
+  // Test to verify that all profile fields are visible after a successful registration
   it("renders all fields", () => {
     cy.visit("http://localhost:3000/register");
     cy.get("#email").type("78777024@gmail.com");
@@ -21,6 +22,7 @@ describe("<profile testing />", () => {
     cy.get("#CancelBotton").should("be.visible");
   });
 
+  // Test for incorrect old password scenario while updating the profile
   it("profile test old password incorrect", () => {
     cy.visit("http://localhost:3000/login");
     cy.get("#email").type("78777024@gmail.com");
@@ -36,6 +38,7 @@ describe("<profile testing />", () => {
     cy.contains("Passwords do not match").should("be.visible");
   });
 
+  // Test for password mismatch in the new password and confirmation fields
   it("profile test new password not match incorrect", () => {
     cy.visit("http://localhost:3000/login");
     cy.get("#email").type("78777024@gmail.com");
@@ -51,6 +54,7 @@ describe("<profile testing />", () => {
     cy.contains("new password does not match").should("be.visible");
   });
 
+  // Test for successful password change
   it("profile test password change success", () => {
     cy.visit("http://localhost:3000/login");
     cy.get("#email").type("78777024@gmail.com");
@@ -66,6 +70,7 @@ describe("<profile testing />", () => {
     cy.url().should("include", "/history");
   });
 
+  // Test for successful notification time update
   it("profile test notification success", () => {
     cy.visit("http://localhost:3000/login");
     cy.get("#email").type("78777024@gmail.com");
@@ -82,6 +87,7 @@ describe("<profile testing />", () => {
     cy.url().should("include", "/history");
   });
 
+  // Test to ensure the user's profile picture is displayed correctly
   it("should display the user profile picture", () => {
     cy.visit("http://localhost:3000/register");
     cy.get("#email").type("78777034@gmail.com");
@@ -104,6 +110,7 @@ describe("<profile testing />", () => {
       .and("include", "blob:http://localhost:3000/");
   });
 
+  // Test to ensure the user can upload a file and the profile picture gets updated
   it("uploads a file", () => {
     // Visit the file upload page
     cy.visit("http://localhost:3000/login");
