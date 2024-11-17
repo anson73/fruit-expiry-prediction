@@ -86,6 +86,7 @@ export default function DisposalPage(props) {
           style={{
             width: "100%",
           }}
+          id="submit-dispose"
         >
           Submit
         </Button>
@@ -95,6 +96,7 @@ export default function DisposalPage(props) {
           style={{
             width: "100%",
           }}
+          id="cancel-dispose"
         >
           Cancel
         </Button>

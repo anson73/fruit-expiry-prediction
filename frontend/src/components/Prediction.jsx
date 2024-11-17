@@ -20,12 +20,15 @@ const Prediction = () => {
   const [latitude, setlatitude] = React.useState("");
   const [longitude, setlongitude] = React.useState("");
   const [prediction, setPrediction] = React.useState([]);
+  const [imageName, setimageName] = React.useState(null);
   const handleImageUpdate = (event) => {
     const file = event.target.files[0];
-    setImage(file);
     if (file) {
+      const fileName = file.name;
       const url = URL.createObjectURL(file);
       setimagepreview(url);
+      setImage(file);
+      setimageName(fileName);
     }
   };
 
@@ -79,7 +82,8 @@ const Prediction = () => {
             {image ? (
               <img
                 src={imagepreview}
-                alt="Uploaded"
+                alt={imageName}
+                id="product-image"
                 style={{ width: "100%", height: 550 }}
               />
             ) : (
@@ -151,13 +155,13 @@ const Prediction = () => {
                 margin: "1rem 0rem",
               }}
             >
-              Please Input a valid consumption date that is in the future!
+              Please Input a valid consumption date that is not in the future!
             </Typography>
           ) : (
             <></>
           )}
           <Button
-            variant="contained"
+            variant="outlined"
             color="secondary"
             fullWidth
             id="predictButton"

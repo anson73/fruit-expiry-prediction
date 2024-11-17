@@ -54,6 +54,7 @@ export default function NotifDates(props) {
           label="Number of Days"
           type="number"
           variant="filled"
+          id="notification-dates"
           onChange={handleSetNotifDate}
           slotProps={{
             inputLabel: {
@@ -66,6 +67,7 @@ export default function NotifDates(props) {
         />
         <Button
           variant="outlined"
+          id="submit-update-notif"
           onClick={() => {
             props.changeNotifDate(props.row.imageId, days);
             props.modalClose();
@@ -78,6 +80,7 @@ export default function NotifDates(props) {
         </Button>
         <Button
           variant="outlined"
+          id="cancel-update-notif"
           onClick={props.modalClose}
           style={{
             width: "90%",

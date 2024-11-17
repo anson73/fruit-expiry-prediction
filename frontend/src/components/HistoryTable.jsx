@@ -50,7 +50,7 @@ function EnhancedTableHead(props) {
   ];
 
   return (
-    <TableHead>
+    <TableHead id="history-table-head">
       <TableRow>
         <TableCell align="center" padding="normal">
           No.
@@ -60,6 +60,7 @@ function EnhancedTableHead(props) {
             key={headCell.id}
             align="center"
             padding="normal"
+            id={headCell.id}
             sortDirection={orderBy === headCell.id ? order : false}
           >
             <TableSortLabel
@@ -188,31 +189,36 @@ export default function EnhancedTable(props) {
   const handleDetailsClose = () => setDetailsOpen(false);
 
   return (
-    <Box sx={{ width: "90%" }}>
+    <Box sx={{ width: "90%" }} id="history-table-body">
       <NotifDates
+        id="notification-dates-page"
         modalOpen={modalOpen}
         modalClose={handleModalClose}
         row={modalRow}
         changeNotifDate={props.changeNotifDate}
       />
       <AlertTable
+        id="alert-page"
         alertOpen={alertOpen}
         alertClose={handleAlertClose}
         alertData={alertData}
       />
       <ConsumePage
+        id="consume-page"
         consumeOpen={consumeOpen}
         consumeClose={handleConsumeClose}
         consumeProduct={props.consumeProduct}
         row={modalRow}
       />
       <DisposalPage
+        id="dispose-page"
         disposeOpen={disposeOpen}
         disposeClose={handleDisposeClose}
         disposeProduct={props.disposeProduct}
         row={modalRow}
       />
       <DetailsPage
+        id="details-page"
         detailsOpen={detailsOpen}
         detailsClose={handleDetailsClose}
         row={modalRow}
@@ -233,6 +239,7 @@ export default function EnhancedTable(props) {
             width: "15rem",
           }}
           control={<Checkbox />}
+          id="hide-consumed-button"
           label="Hide Consumed Products"
           onChange={() => props.controlHideConsumed()}
         />
@@ -244,6 +251,7 @@ export default function EnhancedTable(props) {
             width: "15rem",
           }}
           control={<Checkbox />}
+          id="hide-disposed-button"
           label="Hide Disposed Products"
           onChange={() => props.controlHideDisposed()}
         />
@@ -262,6 +270,7 @@ export default function EnhancedTable(props) {
               backgroundColor: "#fc9b9d",
               color: "black",
             }}
+            id="alert-page"
             onClick={() => handleAlertOpen()}
           >
             Open Alert
@@ -282,27 +291,45 @@ export default function EnhancedTable(props) {
               onRequestSort={handleRequestSort}
               rowCount={rows.length}
             />
-            <TableBody>
+            <TableBody id="history-table-content">
               {rows.map((row, idx) => {
                 return (
                   <TableRow hover tabIndex={-1} key={row.imageId}>
-                    <TableCell align="center">
+                    <TableCell
+                      align="center"
+                      id={`No.${idx + 1 + props.rowsPerPage * props.page}`}
+                    >
                       {idx + 1 + props.rowsPerPage * props.page}
                     </TableCell>
-                    <TableCell align="center">{row.fruitType}</TableCell>
-                    <TableCell align="center">
+                    <TableCell
+                      align="center"
+                      id={`FruitType.${
+                        idx + 1 + props.rowsPerPage * props.page
+                      }`}
+                    >
+                      {row.fruitType}
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      id={`purchaseDate.${
+                        idx + 1 + props.rowsPerPage * props.page
+                      }`}
+                    >
                       {dayjs(row.purchaseDate).format("YYYY-MM-DD")}
                     </TableCell>
                     <TableCell align="center">{row.expiryDate}</TableCell>
                     <TableCell align="center">{row.daysNotify}</TableCell>
-                    <TableCell align="center">
+                    <TableCell
+                      align="center"
+                      id={`Status.${idx + 1 + props.rowsPerPage * props.page}`}
+                    >
                       {row.consumed
                         ? "Consumed"
                         : row.disposed
                         ? "Disposed"
                         : "N/A"}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" id="date">
                       {row.consumed
                         ? row.consumedDate
                         : row.disposed
@@ -313,6 +340,7 @@ export default function EnhancedTable(props) {
                       <Button
                         variant="outlined"
                         onClick={() => viewDetails(row)}
+                        id={`View.${idx + 1 + props.rowsPerPage * props.page}`}
                       >
                         View
                       </Button>
@@ -320,6 +348,9 @@ export default function EnhancedTable(props) {
                         variant="outlined"
                         onClick={() => handleConsumeOpen(row)}
                         disabled={row.disposed}
+                        id={`Consumed.${
+                          idx + 1 + props.rowsPerPage * props.page
+                        }`}
                       >
                         {row.consumed ? <>Un-consume</> : <>Consume</>}
                       </Button>
@@ -327,18 +358,27 @@ export default function EnhancedTable(props) {
                         variant="outlined"
                         disabled={row.consumed}
                         onClick={() => handleDisposeOpen(row)}
+                        id={`Dispose.${
+                          idx + 1 + props.rowsPerPage * props.page
+                        }`}
                       >
                         {row.disposed ? <>Un-dispose</> : <>Dispose</>}
                       </Button>
                       <Button
                         variant="outlined"
                         onClick={() => handleModalOpen(row)}
+                        id={`updateNotif.${
+                          idx + 1 + props.rowsPerPage * props.page
+                        }`}
                       >
                         Update Notif
                       </Button>
                       <Button
                         variant="outlined"
                         onClick={() => props.deleteProduct(row.imageId)}
+                        id={`Delete.${
+                          idx + 1 + props.rowsPerPage * props.page
+                        }`}
                       >
                         Delete
                       </Button>
