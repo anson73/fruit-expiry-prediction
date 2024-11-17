@@ -4,6 +4,7 @@ import Typography from "@mui/material/Typography";
 import HistoryTable from "./HistoryTable";
 import { useNavigate } from "react-router-dom";
 
+// A history page presents all prediction history and inventory of the authenticated user
 const History = (props) => {
   const [order, setOrder] = React.useState("asc");
   const [history, setHistory] = React.useState([]);
@@ -24,6 +25,9 @@ const History = (props) => {
     } else {
       navigate("/");
     }
+
+    // Gets all prediction history and close-to-expire product info
+    // of the authenticated user from the server
     async function getHistoryData() {
       let hideConsumedVariable = "unhide";
       hideConsumed
@@ -74,19 +78,21 @@ const History = (props) => {
     page,
   ]);
 
-  //console.log(history);
   console.log(alertContent);
 
+  // Function to hide all the consumed products
   const controlHideConsumed = () => {
     setPage(0);
     hideConsumed ? setHideConsumed(false) : setHideConsumed(true);
   };
 
+  // Function to hide all the disposed products
   const controlHideDisposed = () => {
     setPage(0);
     hideDisposed ? setHideDisposed(false) : setHideDisposed(true);
   };
 
+  // Function to un-consume a product from the system
   const unconsumeProduct = async (imageId) => {
     const response = await fetch(
       `http://localhost:5005/history/unconsume?imageid=${imageId}`,
@@ -105,6 +111,7 @@ const History = (props) => {
     setUpdateData(true);
   };
 
+  // Function to mark a product as consumed in the system
   const consumeProduct = async (imageId, days) => {
     const response = await fetch(
       `http://localhost:5005/history/consume?imageid=${imageId}&days=${days}`,
@@ -123,6 +130,7 @@ const History = (props) => {
     setUpdateData(true);
   };
 
+  // Function to un-dispose a product from the system
   const undisposeProduct = async (imageId) => {
     const response = await fetch(
       `http://localhost:5005/history/undispose?imageid=${imageId}`,
@@ -141,6 +149,7 @@ const History = (props) => {
     setUpdateData(true);
   };
 
+  // Function to mark a product as consumed in the system
   const disposeProduct = async (imageId, days) => {
     const response = await fetch(
       `http://localhost:5005/history/dispose?imageid=${imageId}&days=${days}`,
@@ -159,6 +168,7 @@ const History = (props) => {
     setUpdateData(true);
   };
 
+  // Function to change the notification dates of a specific product in the system
   const changeNotifDate = async (imageId, days) => {
     const response = await fetch(
       `http://localhost:5005/history/notification?imageid=${imageId}&days=${days}`,
@@ -176,6 +186,7 @@ const History = (props) => {
     setUpdateData(true);
   };
 
+  // Function to remove a prediction history(inventory) from the system
   const deleteProduct = async (imageId) => {
     const response = await fetch(
       `http://localhost:5005/history/delete?imageid=${imageId}`,
