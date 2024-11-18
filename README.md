@@ -92,7 +92,7 @@ npm start
 
 ### Front-end end-to-end Testing
 
-To test the front-end operations and components, use the following command after navigating to the root directory and installing cypress:
+To test the front-end operations and components, use the following command after navigating to the `frontend` directory and installing cypress:
 
 ```bash
 npx cypress open
