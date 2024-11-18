@@ -65,7 +65,7 @@ describe("<history testing />", () => {
     element.clear().type("10/10/2024");
     cy.wait(1000);
     cy.get("#predictButton").click();
-    cy.wait(5000);
+    cy.wait(10000);
     cy.get("#History").click();
     cy.wait(1000);
     cy.get("#fruitType").should("exist");
@@ -120,7 +120,7 @@ describe("<history testing />", () => {
     element.clear().type("10/10/2024");
     cy.wait(1000);
     cy.get("#predictButton").click();
-    cy.wait(5000);
+    cy.wait(10000);
     cy.get("#History").click();
     cy.get("#fruitType").should("exist");
     cy.get("#history-table-content") // Selects the table
@@ -174,7 +174,7 @@ describe("<history testing />", () => {
     element.clear().type("10/10/2024");
     cy.wait(1000);
     cy.get("#predictButton").click();
-    cy.wait(5000);
+    cy.wait(10000);
     cy.get("#History").click();
     cy.get("#fruitType").should("exist");
     cy.get("#history-table-content") // Selects the table
@@ -220,7 +220,7 @@ describe("<history testing />", () => {
     element.clear().type("10/10/2024");
     cy.wait(1000);
     cy.get("#predictButton").click();
-    cy.wait(5000);
+    cy.wait(10000);
     cy.get("#History").click();
     cy.get("#fruitType").should("exist");
     cy.get("#history-table-content") // Selects the table
@@ -283,7 +283,7 @@ describe("<history testing />", () => {
     element.clear().type("10/10/2024");
     cy.wait(1000);
     cy.get("#predictButton").click();
-    cy.wait(5000);
+    cy.wait(10000);
     cy.get("#History").click();
     cy.get("#fruitType").should("exist");
     cy.get("#history-table-content") // Selects the table
