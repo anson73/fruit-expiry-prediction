@@ -92,8 +92,9 @@ npm start
 
 ### Front-end end-to-end Testing
 
-To test the frontend operations and components, use the following command after navigating to the ml directory and installing cypress:
+To test the front-end operations and components, use the following command after navigating to the root directory and installing cypress:
 
 ```bash
 npx cypress open
 ```
+After cypress being loaded, select 'end-to-end testing' and select the desired test for testing. Please note the front-end testing must only be conducted when the docker is running.
