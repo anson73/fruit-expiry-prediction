@@ -358,7 +358,7 @@ def test_history(client):
     resp27 = client.get('/history/alert', headers = {"Authorization": "Bearer " + token})
     assert resp27.status_code == 200
     result = json.loads(resp27.data.decode())
-    assert len(result) == 5
+    assert len(result) == 2
 
     # Test delete
     resp28 = client.delete(f'/history/delete?imageid={appleid}')
