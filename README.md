@@ -1,6 +1,12 @@
 # capstone-project-2024-t3-3900h11adigitalhaven
 
-## AI Model Testing Guide
+## AI Model Installation and Testing Guide
+
+To install the dependencies for the ai go into the ml/ directory and run
+
+```bash
+pip install -r requirements.txt
+```
 
 To run tests for AI models, follow the instructions below:
 
