@@ -13,6 +13,7 @@ import requests
 from dotenv import load_dotenv
 import os
 import math
+import sys
 
 # Image Constants
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -511,7 +512,12 @@ def add_content():
     file = file.read() # Save binary to a variable so it can be used twice.
 
     # Access AI server to get prediction
-    url = "http://ml:8000/predict"
+
+    if "pytest" in sys.modules:
+        url = "http://localhost:8000/predict"
+    else:
+        url = "http://ml:8000/predict"
+    
     response = requests.post(url=url, files={'file': file})
     try:
         predicted_expiry = response.json()["results"][0]["prediction"]
