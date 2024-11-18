@@ -1,5 +1,56 @@
 # capstone-project-2024-t3-3900h11adigitalhaven
 
+## How to Run the App with Docker
+
+1. Clone the Repository to your machine.
+2. Navigate into the backend and open the .env file.
+3. Fill in the environment variables in the .env file.
+4. Navigate to the main directory in the terminal.
+5. Run:
+
+```bash
+docker compose up --build
+```
+
+6. To load the frontend open ‘localhost:3000’ in the browser.
+7. After the first launch the docker can be started by running:
+
+```bash
+docker compose up
+```
+
+## Backend Testing
+
+To install the dependencies for the back navigate to the backend directory in the terminal and run
+
+```bash
+pip install -r requirements.txt
+```
+
+To run tests for the backend the AI engine must also be running to do this Navigate from the main directory to the ml directory. In the terminal then run:
+
+```bash
+uvicorn app.main:app
+```
+
+If the command does not work then use:
+
+```bash
+python -m uvicorn app.main:app
+```
+
+Then to run tests on the backend from the backend directory run:
+
+```bash
+pytest
+```
+
+or
+
+```bash
+python -m pytest
+```
+
 ## AI Model Installation and Testing Guide
 
 To install the dependencies for the ai go into the ml/ directory and run
