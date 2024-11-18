@@ -56,7 +56,7 @@ scheduler = APScheduler()
 mail = Mail()
 
 # Create database model
-# Stores User Information 
+# Stores User Information
 class users(db.Model):
     id = db.Column(db.String(100), primary_key = True)
     username = db.Column(db.String(50), nullable = False)
@@ -81,7 +81,7 @@ class users(db.Model):
     def rolenames(self):
         return []
 
-# Stores images and their metadata 
+# Stores images and their metadata
 class images(db.Model):
     pid = db.Column(db.Integer, primary_key = True)
     id = db.Column("id", db.ForeignKey(users.id))
@@ -102,7 +102,7 @@ class images(db.Model):
 
     def __repr__(self):
         return '<PID %r>' % self.pid
-    
+
 # List of Tokens which have been logged out but have no expired
 class token_blacklist(db.Model):
     token = db.Column(db.String(400), primary_key = True)
@@ -123,7 +123,7 @@ with app.app_context():
 # Initialize the flask-praetorian instance for the app
 guard.init_app(app, users)
 
-# Initializes CORS 
+# Initializes CORS
 cors.init_app(app)
 
 # Initalizes Background scheduler
@@ -154,10 +154,10 @@ def Temp_formula(temp, humidity, shelflife):
 
     # Temperature adjustment factor (Arrhenius component)
     temp_factor = math.exp((EA / R) * ((1 / T0) - (1 / t)))
-    
+
     # Humidity adjustment factor
     humidity_factor = (H0 / humidity) ** B
-    
+
     # Calculate new shelf life
     sl = shelflife * temp_factor * humidity_factor
     result = math.floor(sl)
@@ -182,7 +182,7 @@ def ClearBlacklist():
 
 
 # Every 3 hours sends and email alert to users about approaching expiry dates
-@scheduler.task('interval', id='Alert', hours = 3) 
+@scheduler.task('interval', id='Alert', hours = 3)
 def EmailAlert():
     with scheduler.app.app_context():
         print(f"Scheduled Mailing Cycle Started")
@@ -513,11 +513,11 @@ def add_content():
 
     # Access AI server to get prediction
 
-    if "pytest" in sys.modules:
+    if "PYTEST_CURRENT_TEST" in os.environ:
         url = "http://localhost:8000/predict"
     else:
         url = "http://ml:8000/predict"
-    
+
     response = requests.post(url=url, files={'file': file})
     try:
         predicted_expiry = response.json()["results"][0]["prediction"]
@@ -786,7 +786,7 @@ def delete():
 @auth_required
 def alert():
     """
-    
+
     Route to get nearly expired products from database for history page popup
 
     Example usage: /history/alert
